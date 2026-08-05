@@ -6,9 +6,12 @@ class StatMultiplier:
     """Computes a smooth multiplier based on the current stat value."""
 
     @classmethod
-    def compute(cls, points: int) -> float:
+    def compute(cls, points: int, max_multiplier: float | None = None) -> float:
         if points <= 0:
             return 1.0
+
+        if max_multiplier is None:
+            max_multiplier = MILESTONE_MULTIPLIERS[-1][1]
 
         points = min(points, MILESTONE_MULTIPLIERS[-1][0])
 
@@ -17,8 +20,9 @@ class StatMultiplier:
             high_points, high_multiplier = MILESTONE_MULTIPLIERS[index + 1]
             if low_points <= points <= high_points:
                 if high_points == low_points:
-                    return low_multiplier
+                    return round(min(low_multiplier, max_multiplier), 2)
                 interpolation = (points - low_points) / (high_points - low_points)
-                return round(low_multiplier + interpolation * (high_multiplier - low_multiplier), 2)
+                scaled_multiplier = low_multiplier + interpolation * (high_multiplier - low_multiplier)
+                return round(min(scaled_multiplier, max_multiplier), 2)
 
-        return MILESTONE_MULTIPLIERS[-1][1]
+        return round(min(MILESTONE_MULTIPLIERS[-1][1], max_multiplier), 2)

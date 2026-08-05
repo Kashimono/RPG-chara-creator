@@ -29,10 +29,10 @@ class AdvancedPanel(ctk.CTkFrame):
             self.details_label.configure(text="Hidden multipliers and effective values remain hidden until toggled.")
             return
 
-        lines = ["Stat       Multiplier   Effective"]
-        lines.append("---------------------------------")
+        lines = ["Stat       Multiplier   Maximum   Effective"]
+        lines.append("-------------------------------------------")
         for stat_name in self.player.stats:
             stat = self.player.get_stat(stat_name)
-            lines.append(f"{stat_name:<10}{stat.multiplier:>7.2f}x   {stat.effective_value:>8.2f}")
+            lines.append(f"{stat_name:<10}{stat.multiplier:>10.2f}x   {stat.max_multiplier:>7.0f}x   {stat.effective_value:>10.2f}")
 
         self.details_label.configure(text="\n".join(lines))

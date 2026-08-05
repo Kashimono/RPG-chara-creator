@@ -42,7 +42,11 @@ class PotentialPanel(ctk.CTkFrame):
             }
 
     def _on_roll(self, stat_name: str) -> None:
-        self.player.roll_stat_potential(stat_name)
+        try:
+            self.player.roll_stat_potential(stat_name)
+        except ValueError:
+            self.callback_refresh()
+            return
         self.callback_refresh()
         if self.callback_progress:
             self.callback_progress()
@@ -59,5 +63,5 @@ class PotentialPanel(ctk.CTkFrame):
             row["value_label"].configure(text=f"{stat.roll_value:,}" if stat.roll_value else "-")
             row["attempt_label"].configure(text=f"{stat.roll_attempts}/{stat.max_rolls}")
             row["roll_button"].configure(text="Roll Again" if stat.roll_value else "Roll")
-            row["roll_button"].configure(state="disabled" if stat.accepted or not stat.can_roll else "normal")
-            row["accept_button"].configure(state="normal" if stat.roll_value and not stat.accepted else "disabled")
+            row["roll_button"].configure(state="disabled" if not self.player.race_accepted or stat.accepted or not stat.can_roll else "normal")
+            row["accept_button"].configure(state="normal" if stat.roll_value and not stat.accepted and self.player.race_accepted else "disabled")

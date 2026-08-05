@@ -25,6 +25,9 @@ class LevelPanel(ctk.CTkFrame):
         self.level_up_10_button = create_primary_button(self, "Level Up +10", self._on_level_up_10)
         self.level_up_10_button.grid(row=3, column=1, padx=12, pady=(0, 12), sticky="w")
 
+        self.level_up_1000_button = create_primary_button(self, "Level Up +1000", self._on_level_up_1000)
+        self.level_up_1000_button.grid(row=3, column=2, padx=12, pady=(0, 12), sticky="w")
+
     def _on_level_up(self) -> None:
         self.player.level_up(1)
         self.callback_refresh()
@@ -37,6 +40,12 @@ class LevelPanel(ctk.CTkFrame):
         if self.callback_progress:
             self.callback_progress()
 
+    def _on_level_up_1000(self) -> None:
+        self.player.level_up(1000)
+        self.callback_refresh()
+        if self.callback_progress:
+            self.callback_progress()
+
     def refresh(self) -> None:
         summary = self.player.get_summary()
         self.level_label.configure(text=f"Level: {summary['level']}")
@@ -44,3 +53,4 @@ class LevelPanel(ctk.CTkFrame):
         state = "normal" if summary["character_created"] else "disabled"
         self.level_up_button.configure(state=state)
         self.level_up_10_button.configure(state=state)
+        self.level_up_1000_button.configure(state=state)

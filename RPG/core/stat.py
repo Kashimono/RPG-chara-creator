@@ -1,7 +1,7 @@
 from __future__ import annotations
 import random
 from typing import Any, Dict, Optional
-from ..constants import MAX_POTENTIAL_ROLLS, POTENTIAL_MIN, POTENTIAL_MAX
+from ..constants import MAX_POTENTIAL_ROLLS
 from .multiplier import StatMultiplier
 
 
@@ -15,6 +15,7 @@ class Stat:
         self.roll_value: Optional[int] = None
         self.roll_attempts = 0
         self.accepted = False
+        self._race_multiplier_cap = 10.0
 
     @property
     def max_rolls(self) -> int:
@@ -24,16 +25,11 @@ class Stat:
     def can_roll(self) -> bool:
         return not self.accepted and self.roll_attempts < self.max_rolls
 
-    def roll_potential(self) -> int:
+    def roll_potential(self, min_potential: int, max_potential: int) -> int:
         if not self.can_roll:
             raise ValueError(f"{self.name} has reached the maximum roll limit.")
         self.roll_attempts += 1
-
-        if random.random() < 0.05:
-            self.roll_value = random.randint(1_000_000, 10_000_000)
-        else:
-            self.roll_value = random.randint(POTENTIAL_MIN, POTENTIAL_MAX)
-
+        self.roll_value = random.randint(min_potential, max_potential)
         return self.roll_value
 
     def accept_potential(self) -> None:
@@ -48,7 +44,14 @@ class Stat:
 
     @property
     def multiplier(self) -> float:
-        return StatMultiplier.compute(self.current)
+        return StatMultiplier.compute(self.current, self.max_multiplier)
+
+    def set_race_multiplier_cap(self, max_multiplier: float | None) -> None:
+        self._race_multiplier_cap = float(max_multiplier or 10.0)
+
+    @property
+    def max_multiplier(self) -> float:
+        return self._race_multiplier_cap
 
     @property
     def effective_value(self) -> float:

@@ -1,0 +1,77 @@
+{
+  "save_version": 1,
+  "player": {
+    "level": 1,
+    "exp": 0,
+    "exp_to_next": 100,
+    "stat_points": 0,
+    "character_created": true,
+    "race": {
+      "name": "World-First Spirit",
+      "rarity": "Primordial",
+      "min_potential": 10000000,
+      "max_potential": 1000000000,
+      "max_multiplier": 1500,
+      "text_color": "#000000",
+      "roll_chance": 0.0
+    },
+    "race_accepted": true,
+    "race_name": "World-First Spirit",
+    "race_rarity": "Primordial",
+    "race_min_potential": 10000000,
+    "race_max_potential": 1000000000,
+    "race_text_color": "#000000",
+    "race_pity": {
+      "total_race_rolls": 1000,
+      "mythical_pity_counter": 0,
+      "primordial_pity_counter": 0
+    },
+    "stats": {
+      "HP": {
+        "name": "HP",
+        "current": 0,
+        "potential": 962392830,
+        "roll_value": 962392830,
+        "accepted": true,
+        "roll_attempts": 1,
+        "multiplier": 1.0
+      },
+      "MP": {
+        "name": "MP",
+        "current": 0,
+        "potential": 851220871,
+        "roll_value": 851220871,
+        "accepted": true,
+        "roll_attempts": 2,
+        "multiplier": 1.0
+      },
+      "Attack": {
+        "name": "Attack",
+        "current": 0,
+        "potential": 946061971,
+        "roll_value": 946061971,
+        "accepted": true,
+        "roll_attempts": 6,
+        "multiplier": 1.0
+      },
+      "Agility": {
+        "name": "Agility",
+        "current": 0,
+        "potential": 949057805,
+        "roll_value": 949057805,
+        "accepted": true,
+        "roll_attempts": 3,
+        "multiplier": 1.0
+      },
+      "Stamina": {
+        "name": "Stamina",
+        "current": 0,
+        "potential": 929009853,
+        "roll_value": 929009853,
+        "accepted": true,
+        "roll_attempts": 1,
+        "multiplier": 1.0
+      }
+    }
+  }
+}

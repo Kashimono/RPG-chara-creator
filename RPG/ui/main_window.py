@@ -3,6 +3,7 @@ from tkinter import messagebox, simpledialog
 import customtkinter as ctk
 from .themes import apply_theme
 from .potential_panel import PotentialPanel
+from .race_panel import RacePanel
 from .stat_panel import StatPanel
 from .level_panel import LevelPanel
 from .advanced_panel import AdvancedPanel
@@ -76,8 +77,11 @@ class MainWindow(ctk.CTk):
         exit_button = ctk.CTkButton(menu_frame, text="Exit", command=self.on_exit, corner_radius=12)
         exit_button.grid(row=0, column=3, padx=6, pady=8, sticky="ew")
 
+        self.race_panel = RacePanel(self, self.player, self.refresh)
+        self.race_panel.grid(row=1, column=0, padx=(PADDING, 8), pady=(0, PADDING), sticky="nsew")
+
         self.potential_panel = PotentialPanel(self, self.player, self.refresh)
-        self.potential_panel.grid(row=1, column=0, padx=(PADDING, 8), pady=(0, PADDING), sticky="nsew")
+        self.potential_panel.grid(row=2, column=0, padx=(PADDING, 8), pady=(0, PADDING), sticky="nsew")
 
         side_panel = ctk.CTkFrame(self, fg_color=BACKGROUND_COLOR, corner_radius=0)
         side_panel.grid(row=1, column=1, padx=(8, PADDING), pady=(0, PADDING), sticky="nsew")
@@ -95,6 +99,7 @@ class MainWindow(ctk.CTk):
 
     def refresh(self) -> None:
         self.player = self.game_state.player
+        self.race_panel.player = self.player
         self.potential_panel.player = self.player
         self.level_panel.player = self.player
         self.stat_panel.player = self.player
@@ -103,6 +108,7 @@ class MainWindow(ctk.CTk):
         summary = self.player.get_summary()
         self.level_summary.configure(text=f"Level: {summary['level']}")
         self.pool_summary.configure(text=f"Stat Points: {summary['stat_points']}")
+        self.race_panel.refresh()
         self.potential_panel.refresh()
         self.level_panel.refresh()
         self.stat_panel.refresh()

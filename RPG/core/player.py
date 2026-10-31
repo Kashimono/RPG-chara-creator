@@ -1,3 +1,4 @@
+from math import isfinite
 from typing import Any, Dict, Optional
 from .stat import Stat
 from .potential import PotentialRoller
@@ -22,6 +23,7 @@ class Player:
         self.level = 0
         self.exp = LevelSystem.starting_exp()
         self.exp_to_next = LevelSystem.next_level_exp(self.level)
+        self._current_hp: float | None = None
         self.stat_points = 0
         self.character_created = False
         self.class_id: Optional[str] = None
@@ -43,6 +45,7 @@ class Player:
         self.level = 0
         self.exp = LevelSystem.starting_exp()
         self.exp_to_next = LevelSystem.next_level_exp(self.level)
+        self._current_hp = None
         self.stat_points = 0
         self.character_created = False
         self.class_id = None
@@ -200,6 +203,44 @@ class Player:
         active_race = self.race if self.race_accepted else None
         return calculate_attributes(self.stats, active_race, self.class_id)
 
+    @property
+    def maximum_hp(self) -> float:
+        """Return current maximum HP from the shared effective stat calculation."""
+        return max(0.0, self.calculated_attributes.hp)
+
+    @property
+    def current_hp(self) -> float:
+        """Return current HP, defaulting new or legacy characters to full health."""
+        maximum = self.maximum_hp
+        if self._current_hp is None:
+            return maximum
+        self._current_hp = min(maximum, max(0.0, self._current_hp))
+        return self._current_hp
+
+    @property
+    def has_saved_current_hp(self) -> bool:
+        return self._current_hp is not None
+
+    def set_current_hp(self, value: float) -> float:
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or not isfinite(value):
+            raise ValueError("Current HP must be a finite number.")
+        self._current_hp = min(self.maximum_hp, max(0.0, float(value)))
+        return self._current_hp
+
+    def take_damage(self, amount: float) -> float:
+        if isinstance(amount, bool) or not isinstance(amount, (int, float)) or not isfinite(amount) or amount < 0:
+            raise ValueError("Damage must be a finite non-negative number.")
+        before = self.current_hp
+        self.set_current_hp(before - float(amount))
+        return before - self.current_hp
+
+    def heal(self, amount: float) -> float:
+        if isinstance(amount, bool) or not isinstance(amount, (int, float)) or not isfinite(amount) or amount < 0:
+            raise ValueError("Healing must be a finite non-negative number.")
+        before = self.current_hp
+        self.set_current_hp(before + float(amount))
+        return self.current_hp - before
+
     def can_allocate(self, stat_name: str, amount: int = 1) -> bool:
         if amount <= 0:
             return False
@@ -237,6 +278,7 @@ class Player:
             "character_name": self.character_name,
             "level": self.level,
             "exp": self.exp,
+            "current_hp": self._current_hp,
             "stat_points": self.stat_points,
             "character_created": self.character_created,
             "class_id": self.class_id,
@@ -257,6 +299,7 @@ class Player:
         self.character_name = data.get("character_name", self.character_name)
         self.level = data.get("level", self.level)
         self.exp = data.get("exp", self.exp)
+        raw_current_hp = data.get("current_hp")
         # Old saves stored a fixed EXP threshold. Recalculate it from level.
         self.exp_to_next = LevelSystem.required_exp(self.level)
         self.stat_points = data.get("stat_points", self.stat_points)
@@ -300,6 +343,12 @@ class Player:
             if stat_name not in self.stats:
                 self.stats[stat_name] = Stat(stat_name)
         self._sync_stat_race_context()
+        if raw_current_hp is None:
+            self._current_hp = None
+        elif isinstance(raw_current_hp, bool) or not isinstance(raw_current_hp, (int, float)) or not isfinite(raw_current_hp):
+            raise ValueError("Saved current HP must be a finite number.")
+        else:
+            self._current_hp = min(self.maximum_hp, max(0.0, float(raw_current_hp)))
         self._unlock_titles_for_level()
         if self.equipped_title not in self.unlocked_titles:
             self.equipped_title = "novice"

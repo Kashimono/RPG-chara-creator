@@ -30,7 +30,7 @@ Each `Race` has a `bonus_profile`. By default this is its rarity key, and specif
 
 Named profiles allow a race to specialize beyond its rarity default: Sylvara uses `verdant` (HP x1.04, Stamina x1.06, HP Regeneration x1.12); Aetherborne uses `arcane` (MP x1.08, Magical Defense x1.08, MP Regeneration x1.12); Wyrmkin uses `draconic` (Attack x1.10, Physical Defense x1.05, Critical Damage x1.05); Phoenix Herald uses `phoenix` (HP x1.10, Critical Chance +2 points, HP Regeneration x1.15); World-First Spirit uses `world_first` (primary attributes and defenses x1.15, Critical Chance +4 points, Critical Damage and regeneration x1.12).
 
-The balance assumption is that common races remain neutral, bonuses grow gradually by rarity, and named races exchange broad bonuses for a narrower specialty. These are passive attribute modifiers only; they do not implement combat or enemy damage.
+The balance assumption is that common races remain neutral, bonuses grow gradually by rarity, and named races exchange broad bonuses for a narrower specialty. The passive values feed the calculated attributes used by the combat system; they remain separate from base stat points.
 
 ## Character classes
 
@@ -61,7 +61,7 @@ HP Regeneration/sec = (Stamina * 0.01 + HP * 0.002) * passives
 MP Regeneration/sec = (MP * 0.01 + Stamina * 0.001) * passives
 ```
 
-Defense and regeneration have a zero minimum. Critical chance, critical damage, and attack speed have the displayed caps. Critical damage starts at x1.5, and attack speed starts at 1 attack per second. The scaling constants keep chance and speed gains diminishing at high attributes. These values are future combat inputs; no damage application or automatic regeneration loop is part of this update.
+Defense and regeneration have a zero minimum. Critical chance, critical damage, and attack speed have the displayed caps. Critical damage starts at x1.5, and attack speed starts at 1 attack per second. The scaling constants keep chance and speed gains diminishing at high attributes. Ordinary physical combat consumes these values; see [`COMBAT.md`](COMBAT.md) for damage, cooldown, and regeneration behavior.
 
 ## Titles
 
@@ -80,6 +80,6 @@ Unlocks are granted automatically whenever progression changes the level. Only a
 
 ## Save migration
 
-Save schema version 3 stores the existing character inputs plus EXP, `class_id`, `unlocked_titles`, and `equipped_title`. It stores the race's `bonus_profile` as part of the race data. Derived attributes and the current level's EXP requirement are not serialized; they are recalculated from the saved level, stats, race, and class.
+Save schema version 4 retains the version 3 progression inputs, including EXP, `class_id`, `unlocked_titles`, `equipped_title`, and the race's `bonus_profile`. It adds current HP and persistent combat statistics. Derived attributes and the current level's EXP requirement are not serialized; they are recalculated from the saved level, stats, race, and class.
 
-Version 2 saves use the existing `character` envelope; version 1 saves use `player`; raw Player JSON is also accepted. Older saves default to no class, the starting Novice title, and the race's default profile. Their old stored EXP threshold is ignored and recalculated. Loading performs this migration in memory; the source file changes only when the user explicitly saves and confirms overwriting it.
+Version 3 and version 2 saves use the existing `character` envelope; version 1 saves use `player`; raw Player JSON is also accepted. Older saves default to full current HP, zero combat statistics, no class, the starting Novice title, and the race's default profile. Their old stored EXP threshold is ignored and recalculated. Loading performs this migration in memory; the source file changes only when the user explicitly saves and confirms overwriting it.

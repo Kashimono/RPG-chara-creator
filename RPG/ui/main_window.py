@@ -67,7 +67,12 @@ class MainWindow(ctk.CTk):
         self.pages = {
             "dashboard": DashboardPage(self.page_container, lambda: self.game_state, self.show_page),
             "character": CharacterPage(self.page_container, self),
-            "combat": CombatPage(self.page_container),
+            "combat": CombatPage(
+                self.page_container,
+                lambda: self.game_state,
+                self.handle_game_change,
+                self.mark_game_dirty,
+            ),
             "inventory": InventoryPage(self.page_container),
             "settings": SettingsPage(
                 self.page_container,
@@ -100,8 +105,13 @@ class MainWindow(ctk.CTk):
             self.game_status_label.configure(text="New game", text_color=SECONDARY_TEXT)
 
     def handle_game_change(self) -> None:
-        self.is_dirty = True
+        self.mark_game_dirty()
         self.refresh_views()
+
+    def mark_game_dirty(self) -> None:
+        self.is_dirty = True
+        if hasattr(self, "game_status_label"):
+            self.game_status_label.configure(text="Unsaved changes", text_color="#e7bd65")
 
     def new_game(self) -> None:
         if self.is_dirty and not messagebox.askyesno(
@@ -231,4 +241,7 @@ class MainWindow(ctk.CTk):
             parent=self,
         ):
             return
+        combat_page = self.pages.get("combat")
+        if combat_page is not None:
+            combat_page.shutdown()
         self.destroy()

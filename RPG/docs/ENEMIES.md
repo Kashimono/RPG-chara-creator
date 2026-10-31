@@ -108,10 +108,10 @@ Each phase can configure an attack multiplier, attack-interval multiplier, physi
 
 Enemies may name a table in `loot_tables.json`. Entries define a string reward ID, independent drop chance from 0 to 1, minimum/maximum quantity, optional guaranteed status, and roll count. Optional `max_drops` limits successful entries but cannot suppress configured guaranteed rolls.
 
-Each non-guaranteed entry is rolled independently for each configured roll. A roll succeeds when the injected random value is less than `drop_chance`; quantity is then selected inclusively between minimum and maximum. Repeated IDs are combined into one `LootDrop(reward_id, quantity, guaranteed)` result. Tables use injectable random sources for repeatable tests.
+Each non-guaranteed entry is rolled independently for each configured roll. A roll succeeds when the injected random value is less than `drop_chance`; quantity is then selected inclusively between minimum and maximum. Repeated IDs with the same currency type are combined. `currency_type: "gold"` marks a Gold reward entry, while an omitted currency type preserves the existing item-like drop shape. A currency and item entry may share a reward ID without being combined. Tables use injectable random sources for repeatable tests.
 
-Drop IDs are data results written to the combat event and feedback log. They are not added to an inventory and have no Gold or equipment behavior. Update 4/5 inventory and equipment work can consume `CombatEvent.drops` without changing combat's loot calculation.
+Non-currency drop IDs are data results written to the combat event and feedback log. They are not added to an inventory. The existing defeat roll is passed to Update 4's RewardManager, which credits currency entries once through EconomyManager; it does not perform a second roll. Equipment and inventory behavior remain future work.
 
 ## Persistence
 
-Enemy definitions remain in `RPG/data/`; active enemies, HP, scaling snapshots, effects, cooldowns, phase timers, and loot rolls are transient. Save schema 5 persists only aggregate long-term statistics, adding Elite/Boss/World Boss defeat counts. Older version 4 and earlier saves retain all existing character and combat totals and default new counters to zero.
+Enemy definitions remain in `RPG/data/`; active enemies, HP, scaling snapshots, effects, cooldowns, phase timers, and loot rolls are transient. Save schema 6 persists aggregate combat statistics and the GameState-owned economy. Older version 5 and earlier saves retain existing character and combat data and receive an empty economy.

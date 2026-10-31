@@ -1,0 +1,74 @@
+{
+  "global_gold_multiplier": 1.0,
+  "classification_gold_multipliers": {
+    "common": 1.0,
+    "uncommon": 1.0,
+    "rare": 1.0,
+    "elite": 1.0,
+    "boss": 1.0,
+    "world_boss": 1.0
+  },
+  "enemy_gold_rewards": {
+    "slime": 5,
+    "goblin": 8,
+    "wolf": 12,
+    "skeleton": 15,
+    "orc": 20,
+    "goblin_warrior": 25,
+    "dire_wolf": 35,
+    "skeleton_knight": 45,
+    "orc_berserker": 55,
+    "ogre": 100,
+    "dark_knight": 140,
+    "wraith": 180,
+    "ancient_guardian": 350,
+    "blood_knight": 500,
+    "dragon_lord": 3000,
+    "demon_sovereign": 4500,
+    "primordial_entity": 15000
+  },
+  "enemy_gold_multipliers": {},
+  "transaction_history_limit": 100,
+  "trainings": [
+    {
+      "training_id": "strength_training",
+      "name": "Strength Training",
+      "description": "Focused drills improve Attack within its accepted potential.",
+      "stat_name": "Attack",
+      "cost": 100,
+      "stat_points": 1
+    },
+    {
+      "training_id": "vitality_training",
+      "name": "Vitality Training",
+      "description": "Conditioning improves HP within its accepted potential.",
+      "stat_name": "HP",
+      "cost": 100,
+      "stat_points": 1
+    },
+    {
+      "training_id": "agility_training",
+      "name": "Agility Training",
+      "description": "Footwork drills improve Agility within its accepted potential.",
+      "stat_name": "Agility",
+      "cost": 100,
+      "stat_points": 1
+    },
+    {
+      "training_id": "endurance_training",
+      "name": "Endurance Training",
+      "description": "Hardy conditioning improves Stamina within its accepted potential.",
+      "stat_name": "Stamina",
+      "cost": 100,
+      "stat_points": 1
+    },
+    {
+      "training_id": "arcane_training",
+      "name": "Arcane Training",
+      "description": "Meditation improves MP within its accepted potential.",
+      "stat_name": "MP",
+      "cost": 100,
+      "stat_points": 1
+    }
+  ]
+}

@@ -16,6 +16,7 @@ from .enemy import Enemy, EnemyClassification, EnemyDefinition
 from .enemy_ability import AbilityEvent, EnemyAbilityRuntime, EnemyAttackProfile
 from .enemy_database import EnemyDatabase, EnemyDatabaseError
 from .loot_table import LootDrop, LootRandomSource, LootTableDatabase
+from ..economy.reward_manager import RewardManager, RewardSummary
 
 if TYPE_CHECKING:
     from ...core.game_state import GameState
@@ -43,6 +44,7 @@ class CombatEvent:
     levels_gained: int = 0
     drops: tuple[LootDrop, ...] = ()
     notifications: tuple[str, ...] = ()
+    reward_summary: RewardSummary | None = None
 
 
 @dataclass(frozen=True)
@@ -62,6 +64,7 @@ class CombatManager:
         loot_rng: LootRandomSource | None = None,
         enemy_database: EnemyDatabase | None = None,
         loot_database: LootTableDatabase | None = None,
+        reward_manager: RewardManager | None = None,
         enemy_definitions: Iterable[EnemyDefinition] | None = None,
         respawn_delay: float = combat_config.RESPAWN_DELAY_SECONDS,
         recovery_fraction: float = combat_config.RECOVERY_HP_FRACTION,
@@ -78,6 +81,7 @@ class CombatManager:
                 else EnemyDatabase.load_default()
             )
             self.loot_database = loot_database or LootTableDatabase.load_default()
+            self.reward_manager = reward_manager or RewardManager()
             self.enemy_database.validate_loot_references(set(self.loot_database.table_ids))
         except (EnemyDatabaseError, ValueError) as exc:
             raise ValueError(f"Combat content could not be initialized: {exc}") from exc
@@ -387,17 +391,23 @@ class CombatManager:
         now: float,
         notifications: tuple[str, ...],
     ) -> CombatEvent:
-        if enemy.classification in {EnemyClassification.BOSS, EnemyClassification.WORLD_BOSS}:
-            claimed = self._boss_manager.claim_defeat(enemy)
-        else:
-            claimed = enemy.claim_reward()
-        if not claimed:
+        summary = self.reward_manager.process_defeat(
+            self.game_state,
+            enemy,
+            loot_database=self.loot_database,
+            loot_rng=self.loot_rng,
+            claim_reward=(
+                lambda: self._boss_manager.claim_defeat(enemy)
+                if enemy.classification in {EnemyClassification.BOSS, EnemyClassification.WORLD_BOSS}
+                else enemy.claim_reward()
+            ),
+        )
+        if summary is None:
             return CombatEvent("duplicate_reward_blocked", f"{enemy.name}'s reward was already claimed.")
 
-        reward = enemy.exp_reward
-        levels = self.game_state.award_combat_exp(reward) if reward > 0 else 0
-        self.game_state.record_enemy_defeated(reward, enemy.classification.value)
-        drops = self.loot_database.roll(enemy.loot_table_id, self.loot_rng)
+        reward = summary.exp_awarded
+        levels = summary.levels_gained
+        drops = summary.item_drops + summary.currency_drops
         self._clear_ability_runtime()
         self._next_enemy_attack_at = None
         self._last_regeneration_at = None
@@ -409,12 +419,24 @@ class CombatManager:
             self._next_respawn_at = None
 
         suffix = f" Earned {reward:,} EXP."
+        if summary.currency_error:
+            suffix += (
+                f" Gold reward was not credited because the wallet could not safely record it"
+                f" ({summary.currency_error})."
+            )
+        else:
+            suffix += (
+                f" Guaranteed Gold: {summary.guaranteed_gold:,}; additional Gold drops: "
+                f"{summary.bonus_gold:,}; total earned: {summary.total_gold_credited:,} G."
+            )
+        if summary.configuration_warning:
+            suffix += f" Base Gold reward unavailable: {summary.configuration_warning}."
         if levels:
             suffix += f" Level up: +{levels} level(s), +{levels * 10} stat points."
-        if drops:
-            suffix += " Loot: " + ", ".join(f"{drop.reward_id} x{drop.quantity}" for drop in drops) + "."
+        if summary.item_drops:
+            suffix += " Loot: " + ", ".join(f"{drop.reward_id} x{drop.quantity}" for drop in summary.item_drops) + "."
         else:
-            suffix += " No loot dropped."
+            suffix += " No item loot dropped."
         if critical:
             suffix = "Critical hit! " + suffix.lstrip()
         if enemy.classification is EnemyClassification.WORLD_BOSS:
@@ -434,6 +456,7 @@ class CombatManager:
             levels_gained=levels,
             drops=drops,
             notifications=notifications,
+            reward_summary=summary,
         )
 
     def _spawn_common_enemy(self) -> Enemy:

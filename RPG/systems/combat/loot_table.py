@@ -27,6 +27,7 @@ class LootEntry:
     max_quantity: int = 1
     guaranteed: bool = False
     rolls: int = 1
+    currency_type: str | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.reward_id, str) or not self.reward_id.strip():
@@ -46,6 +47,10 @@ class LootEntry:
             raise ValueError(f"Roll count for '{self.reward_id}' must be a positive whole number.")
         if not isinstance(self.guaranteed, bool):
             raise ValueError(f"Guaranteed flag for '{self.reward_id}' must be a boolean.")
+        if self.currency_type is not None:
+            if not isinstance(self.currency_type, str) or self.currency_type.strip().casefold() != "gold":
+                raise ValueError(f"Loot entry '{self.reward_id}' uses an unsupported currency type.")
+            object.__setattr__(self, "currency_type", "gold")
 
 
 @dataclass(frozen=True)
@@ -53,6 +58,19 @@ class LootDrop:
     reward_id: str
     quantity: int
     guaranteed: bool = False
+    currency_type: str | None = None
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.reward_id, str) or not self.reward_id.strip():
+            raise ValueError("Loot drops require a reward ID.")
+        if isinstance(self.quantity, bool) or not isinstance(self.quantity, int) or self.quantity < 1:
+            raise ValueError("Loot quantities must be positive whole numbers.")
+        if not isinstance(self.guaranteed, bool):
+            raise ValueError("Loot guaranteed flag must be a boolean.")
+        if self.currency_type is not None:
+            if not isinstance(self.currency_type, str) or self.currency_type.strip().casefold() != "gold":
+                raise ValueError("Loot drop uses an unsupported currency type.")
+            object.__setattr__(self, "currency_type", "gold")
 
 
 @dataclass(frozen=True)
@@ -85,19 +103,21 @@ class LootTable:
                     break
                 if entry.guaranteed or source.random() < float(entry.drop_chance):
                     quantity = source.randint(entry.min_quantity, entry.max_quantity)
-                    result.append(LootDrop(entry.reward_id, quantity, entry.guaranteed))
+                    result.append(LootDrop(entry.reward_id, quantity, entry.guaranteed, entry.currency_type))
                     successes += 1
 
-        combined: dict[str, LootDrop] = {}
+        combined: dict[tuple[str, str | None], LootDrop] = {}
         for drop in result:
-            current = combined.get(drop.reward_id)
+            key = (drop.reward_id, drop.currency_type)
+            current = combined.get(key)
             if current is None:
-                combined[drop.reward_id] = drop
+                combined[key] = drop
             else:
-                combined[drop.reward_id] = LootDrop(
+                combined[key] = LootDrop(
                     reward_id=drop.reward_id,
                     quantity=current.quantity + drop.quantity,
                     guaranteed=current.guaranteed or drop.guaranteed,
+                    currency_type=drop.currency_type,
                 )
         return tuple(combined.values())
 
@@ -170,6 +190,7 @@ class LootTableDatabase:
                 max_quantity=entry.get("max_quantity", 1),
                 guaranteed=entry.get("guaranteed", False),
                 rolls=entry.get("rolls", 1),
+                currency_type=entry.get("currency_type"),
             )
             for entry in entries_data
         )

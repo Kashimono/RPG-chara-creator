@@ -241,11 +241,16 @@ class Player:
         self.set_current_hp(before + float(amount))
         return self.current_hp - before
 
-    def can_allocate(self, stat_name: str, amount: int = 1) -> bool:
-        if amount <= 0:
+    def can_allocate(self, stat_name: str, amount: int = 1, *, consume_stat_points: bool = True) -> bool:
+        if (
+            isinstance(amount, bool)
+            or not isinstance(amount, int)
+            or amount <= 0
+            or not isinstance(consume_stat_points, bool)
+        ):
             return False
-        stat = self.stats[stat_name]
-        if not self.character_created or self.stat_points < amount or not stat.accepted:
+        stat = self.stats.get(stat_name)
+        if stat is None or not self.character_created or (consume_stat_points and self.stat_points < amount) or not stat.accepted:
             return False
         available_capacity = (stat.potential or 0) - stat.current
         return available_capacity >= amount
@@ -253,12 +258,13 @@ class Player:
     def allocate_point(self, stat_name: str) -> bool:
         return self.allocate_points(stat_name, 1)
 
-    def allocate_points(self, stat_name: str, amount: int) -> bool:
-        if not self.can_allocate(stat_name, amount):
+    def allocate_points(self, stat_name: str, amount: int, *, consume_stat_points: bool = True) -> bool:
+        if not self.can_allocate(stat_name, amount, consume_stat_points=consume_stat_points):
             return False
         stat = self.stats[stat_name]
         stat.current += amount
-        self.stat_points -= amount
+        if consume_stat_points:
+            self.stat_points -= amount
         return True
 
     def can_refund(self, stat_name: str) -> bool:

@@ -46,6 +46,10 @@ def test_database_selected_elite_awards_rewards_and_records_classification():
     assert started.kind == "elite_encounter_started"
     assert defeated.kind == "elite_defeated"
     assert defeated.exp_reward > 0
+    assert defeated.reward_summary is not None
+    assert defeated.reward_summary.guaranteed_gold == 350
+    assert defeated.reward_summary.total_gold_credited >= 350
+    assert state.economy.gold.balance == defeated.reward_summary.total_gold_credited
     assert any(drop.reward_id == "monster_essence" for drop in defeated.drops)
     assert state.combat_statistics.total_elites_defeated == 1
     assert manager.state is CombatState.IDLE
@@ -63,6 +67,10 @@ def test_boss_challenge_is_dedicated_and_emits_structured_loot_once():
     assert defeated.kind == "boss_defeated"
     assert {drop.reward_id for drop in defeated.drops} >= {"boss_trophy", "ancient_shard"}
     assert "Loot:" in defeated.message
+    assert defeated.reward_summary is not None
+    assert defeated.reward_summary.guaranteed_gold == 3_000
+    assert defeated.reward_summary.total_gold_credited >= 3_000
+    assert any(drop.currency_type == "gold" for drop in defeated.drops)
     assert state.combat_statistics.total_bosses_defeated == 1
     assert state.combat_statistics.total_enemies_defeated == 1
     assert manager.state is CombatState.IDLE

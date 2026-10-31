@@ -8,6 +8,7 @@ import customtkinter as ctk
 
 from ...config import ACCENT_COLOR, SECONDARY_TEXT, SURFACE_COLOR, TEXT_COLOR
 from ...core.game_state import GameState
+from ...systems.economy.currency import format_currency
 
 
 class DashboardPage(ctk.CTkFrame):
@@ -42,12 +43,19 @@ class DashboardPage(ctk.CTkFrame):
 
         cards = ctk.CTkFrame(self, fg_color="transparent")
         cards.grid(row=4, column=0, sticky="ew", padx=22, pady=(0, 14))
-        for index in range(4):
+        for index in range(5):
             cards.grid_columnconfigure(index, weight=1)
         self.level_value = self._summary_card(cards, 0, "LEVEL", "0")
         self.points_value = self._summary_card(cards, 1, "STAT POINTS", "0")
         self.rarity_value = self._summary_card(cards, 2, "RACE RARITY", "-")
         self.class_value = self._summary_card(cards, 3, "CLASS", "Unselected")
+        gold_card = ctk.CTkFrame(cards, fg_color=SURFACE_COLOR, corner_radius=16)
+        gold_card.grid(row=0, column=4, sticky="ew", padx=5, pady=2)
+        ctk.CTkLabel(gold_card, text="GOLD", anchor="w", font=ctk.CTkFont(size=10, weight="bold"), text_color=SECONDARY_TEXT).pack(fill="x", padx=13, pady=(13, 2))
+        self.gold_value = ctk.CTkLabel(gold_card, text="0 G", anchor="w", font=ctk.CTkFont(size=18, weight="bold"), text_color=TEXT_COLOR)
+        self.gold_value.pack(fill="x", padx=13)
+        self.gold_earned_value = ctk.CTkLabel(gold_card, text="Earned: 0 G", anchor="w", font=ctk.CTkFont(size=10), text_color=SECONDARY_TEXT)
+        self.gold_earned_value.pack(fill="x", padx=13, pady=(1, 13))
 
         summary = ctk.CTkFrame(self, fg_color=SURFACE_COLOR, corner_radius=20)
         summary.grid(row=5, column=0, sticky="ew", padx=28, pady=(0, 14))
@@ -57,8 +65,8 @@ class DashboardPage(ctk.CTkFrame):
 
         quick = ctk.CTkFrame(self, fg_color="transparent")
         quick.grid(row=6, column=0, sticky="ew", padx=28, pady=(2, 20))
-        ctk.CTkLabel(quick, text="QUICK ACCESS", anchor="w", font=ctk.CTkFont(size=12, weight="bold"), text_color=SECONDARY_TEXT).grid(row=0, column=0, columnspan=3, sticky="w", pady=(0, 8))
-        shortcuts = (("Open Character", "character"), ("Combat", "combat"), ("Inventory", "inventory"))
+        ctk.CTkLabel(quick, text="QUICK ACCESS", anchor="w", font=ctk.CTkFont(size=12, weight="bold"), text_color=SECONDARY_TEXT).grid(row=0, column=0, columnspan=4, sticky="w", pady=(0, 8))
+        shortcuts = (("Open Character", "character"), ("Combat", "combat"), ("Economy", "economy"), ("Inventory", "inventory"))
         for index, (label, page) in enumerate(shortcuts):
             ctk.CTkButton(
                 quick,
@@ -82,7 +90,9 @@ class DashboardPage(ctk.CTkFrame):
         return value_label
 
     def refresh(self) -> None:
-        player = self._get_state().character
+        state = self._get_state()
+        player = state.character
+        account = state.economy.gold
         race = player.race
         race_name = race.name if race else player.race_name or "No race rolled"
         rarity = race.rarity_name if race else player.race_rarity or "-"
@@ -97,6 +107,8 @@ class DashboardPage(ctk.CTkFrame):
         self.points_value.configure(text=f"{player.stat_points:,}")
         self.rarity_value.configure(text=rarity)
         self.class_value.configure(text=selected_class.name if selected_class else "Unselected")
+        self.gold_value.configure(text=format_currency(account.balance))
+        self.gold_earned_value.configure(text=f"Lifetime earned: {format_currency(account.total_earned)}")
         self.exp_label.configure(text=f"EXP: {player.exp:,} / {player.exp_to_next:,}")
         self.exp_bar.set(min(1.0, max(0.0, player.exp / max(1, player.exp_to_next))))
 

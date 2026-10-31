@@ -12,28 +12,30 @@ A dark fantasy clicker RPG made with Python and CustomTkinter. The application h
 - Unlock and equip cosmetic titles at level milestones.
 - View Physical Defense, Magical Defense, Critical Chance, Critical Damage, Attack Speed, HP Regeneration, and MP Regeneration.
 - Fight a data-driven roster of 17 Common, Uncommon, Rare, Elite, Boss, and World Boss enemies with click attacks, enemy abilities, boss phases, structured loot rolls, HP regeneration, retreat, recovery, and EXP rewards.
+- Earn configurable guaranteed Gold rewards and optional Gold loot drops through the existing defeat and loot-table flow. Spend Gold on five potential-aware training options, with transaction history saved in GameState.
 - Browse enemies by classification, start optional Elite encounters, and explicitly confirm Boss and World Boss challenges. The Common rotation retains the original five enemies and timed respawns.
-- Save and load characters with version 5 JSON. Version 4, version 3, version 2, version 1, and raw legacy saves preserve existing character/combat data and default the new encounter counters.
-- Use Dashboard, Character, Combat, Inventory, and Settings navigation. Inventory remains a planned placeholder.
+- Save and load characters with version 6 JSON. Version 5 and older saves preserve character/combat data and receive a zeroed economy during migration.
+- Use Dashboard, Character, Combat, Economy, Inventory, and Settings navigation. Inventory remains a planned placeholder.
 - Copy the existing character profile to the clipboard and choose an appearance preference.
 
-Progression rules are documented in [`RPG/docs/PROGRESSION.md`](RPG/docs/PROGRESSION.md). Combat formulas and encounter behavior are documented in [`RPG/docs/COMBAT.md`](RPG/docs/COMBAT.md), with enemy data, scaling, abilities, phases, and loot in [`RPG/docs/ENEMIES.md`](RPG/docs/ENEMIES.md).
+Progression rules are documented in [`RPG/docs/PROGRESSION.md`](RPG/docs/PROGRESSION.md). Combat formulas and encounter behavior are documented in [`RPG/docs/COMBAT.md`](RPG/docs/COMBAT.md), economy design and tuning in [`RPG/docs/ECONOMY.md`](RPG/docs/ECONOMY.md), with enemy data, scaling, abilities, phases, and loot in [`RPG/docs/ENEMIES.md`](RPG/docs/ENEMIES.md).
 
-Loot currently appears as structured combat results only. This update does not add a functional inventory, Gold, equipment, player skills, idle or offline combat, world maps, dungeons, summoning, or ascension.
+Non-currency loot remains structured combat feedback only; it is not stored in an inventory. Equipment, player skills, idle or offline combat, world maps, dungeons, summoning, and ascension remain future features.
 
 ## Project structure
 
 ```text
 RPG/
   core/                 Character, race, stats, EXP, passives, and calculations
-  data/                 Enemy roster, enemy abilities, and loot table JSON
+  data/                 Enemy roster, enemy abilities, loot tables, and economy tuning
   managers/             Save and settings services
   systems/combat/       Enemy database, abilities, boss phases, loot, damage, and encounters
+  systems/economy/      Currency state, transactions, reward calculation, and training shop
   ui/
     main_window.py      Application shell and shared actions
     navigation.py       Persistent sidebar
     components/         Reusable progression panels
-    pages/              Dashboard, Character, Combat, Inventory, Settings
+    pages/              Dashboard, Character, Combat, Economy, Inventory, Settings
     *_panel.py          Race, potential, level, allocation, and advanced stats
   saves/                JSON character saves
   docs/                 Architecture and progression documentation

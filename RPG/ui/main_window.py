@@ -18,8 +18,8 @@ class MainWindow(ctk.CTk):
         super().__init__()
         apply_theme()
         self.title("RPG Stat Workshop")
-        self.geometry(f"{1040}x{720}")
-        self.minsize(960, 660)
+        self.geometry(f"{1180}x{780}")
+        self.minsize(1120, 720)
         self.configure(fg_color=BACKGROUND_COLOR)
 
         self.game_state = game_state
@@ -33,8 +33,8 @@ class MainWindow(ctk.CTk):
         self.refresh()
 
     def _build_interface(self) -> None:
-        self.grid_columnconfigure(0, weight=3)
-        self.grid_columnconfigure(1, weight=2)
+        self.grid_columnconfigure(0, weight=5)
+        self.grid_columnconfigure(1, weight=4)
         self.grid_rowconfigure(0, weight=0)
         self.grid_rowconfigure(1, weight=1)
 
@@ -63,7 +63,7 @@ class MainWindow(ctk.CTk):
 
         menu_frame = ctk.CTkFrame(header_frame, fg_color="#161a20", corner_radius=14)
         menu_frame.grid(row=3, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 16))
-        menu_frame.grid_columnconfigure((0, 1, 2, 3), weight=1)
+        menu_frame.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
 
         new_game_button = ctk.CTkButton(menu_frame, text="New Game", command=self.new_game, corner_radius=12)
         new_game_button.grid(row=0, column=0, padx=6, pady=8, sticky="ew")
@@ -74,8 +74,16 @@ class MainWindow(ctk.CTk):
         load_game_button = ctk.CTkButton(menu_frame, text="Load Game", command=self.load_game, corner_radius=12)
         load_game_button.grid(row=0, column=2, padx=6, pady=8, sticky="ew")
 
+        copy_stats_button = ctk.CTkButton(
+            menu_frame,
+            text="Copy Character Stats",
+            command=self.copy_character_stats,
+            corner_radius=12,
+        )
+        copy_stats_button.grid(row=0, column=3, padx=6, pady=8, sticky="ew")
+
         exit_button = ctk.CTkButton(menu_frame, text="Exit", command=self.on_exit, corner_radius=12)
-        exit_button.grid(row=0, column=3, padx=6, pady=8, sticky="ew")
+        exit_button.grid(row=0, column=4, padx=6, pady=8, sticky="ew")
 
         self.race_panel = RacePanel(self, self.player, self.refresh)
         self.race_panel.grid(row=1, column=0, padx=(PADDING, 8), pady=(0, PADDING), sticky="nsew")
@@ -154,6 +162,42 @@ class MainWindow(ctk.CTk):
             self.refresh()
         except Exception as exc:
             messagebox.showerror("Load Error", str(exc))
+
+    def copy_character_stats(self) -> None:
+        player = self.game_state.player
+        if not player.character_created:
+            messagebox.showinfo(
+                "No Character",
+                "Create or load a character before copying its stats.",
+                parent=self,
+            )
+            return
+
+        profile = player.get_character_profile()
+        stats = profile["stats"]
+        profile_text = (
+            "========== CHARACTER PROFILE ==========\n\n"
+            f"Race: {profile['race']}\n"
+            f"Rarity: {profile['rarity']}\n"
+            f"Level: {profile['level']}\n\n"
+            "========== CHARACTER STATS ==========\n\n"
+            f"HP: {stats['HP']}\n"
+            f"MP: {stats['MP']}\n"
+            f"Attack: {stats['Attack']}\n"
+            f"Agility: {stats['Agility']}\n"
+            f"Stamina: {stats['Stamina']}\n\n"
+            "======================================="
+        )
+
+        try:
+            self.clipboard_clear()
+            self.clipboard_append(profile_text)
+            self.update()
+        except tk.TclError as exc:
+            messagebox.showerror("Clipboard Error", f"Could not copy character stats.\n\n{exc}", parent=self)
+            return
+
+        self.show_status("Character stats copied to clipboard.")
 
     def show_status(self, message: str) -> None:
         self.save_status.configure(text=message)

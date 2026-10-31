@@ -200,6 +200,16 @@ class Player:
     def get_stat(self, stat_name: str) -> Stat:
         return self.stats[stat_name]
 
+    def get_character_profile(self) -> Dict[str, Any]:
+        race_name = self.race.name if self.race is not None else self.race_name
+        race_rarity = self.race.rarity_name if self.race is not None else self.race_rarity
+        return {
+            "race": race_name or "Unknown",
+            "rarity": race_rarity or "Unknown",
+            "level": self.level,
+            "stats": {name: self.stats[name].current for name in STAT_NAMES},
+        }
+
     def get_summary(self) -> dict:
         return {
             "level": self.level,

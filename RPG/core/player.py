@@ -11,6 +11,7 @@ class Player:
     """Tracks the player progression, stat state, and allocation rules."""
 
     def __init__(self) -> None:
+        self.character_name = "Adventurer"
         self.level = 0
         self.exp = LevelSystem.starting_exp()
         self.exp_to_next = LevelSystem.next_level_exp()
@@ -28,6 +29,7 @@ class Player:
         self._sync_stat_race_context()
 
     def reset(self) -> None:
+        self.character_name = "Adventurer"
         self.level = 0
         self.exp = LevelSystem.starting_exp()
         self.exp_to_next = LevelSystem.next_level_exp()
@@ -151,6 +153,7 @@ class Player:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
+            "character_name": self.character_name,
             "level": self.level,
             "exp": self.exp,
             "exp_to_next": self.exp_to_next,
@@ -168,6 +171,7 @@ class Player:
         }
 
     def from_dict(self, data: Dict[str, Any]) -> None:
+        self.character_name = data.get("character_name", self.character_name)
         self.level = data.get("level", self.level)
         self.exp = data.get("exp", self.exp)
         self.exp_to_next = data.get("exp_to_next", self.exp_to_next)
@@ -212,6 +216,7 @@ class Player:
 
     def get_summary(self) -> dict:
         return {
+            "character_name": self.character_name,
             "level": self.level,
             "exp": self.exp,
             "exp_to_next": self.exp_to_next,

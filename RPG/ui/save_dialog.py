@@ -3,7 +3,7 @@ import customtkinter as ctk
 from tkinter import ttk, messagebox
 from typing import List
 
-from ..core.save_manager import SaveManager
+from ..managers.save_manager import SaveManager
 
 
 class LoadSaveDialog(ctk.CTkToplevel):

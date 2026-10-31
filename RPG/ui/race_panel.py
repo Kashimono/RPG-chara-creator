@@ -128,6 +128,9 @@ class RacePanel(ctk.CTkFrame):
         return self.player.race is not None and self.player.race.rarity in {Rarity.LEGENDARY, Rarity.MYTHICAL, Rarity.PRIMORDIAL}
 
     def refresh(self) -> None:
+        self.pity_label.configure(text=f"Race Rolls: {self.player.race_pity.total_race_rolls}")
+        self.mythical_pity_label.configure(text=f"Mythical Pity: {self.player.race_pity.mythical_pity_counter} / 100")
+        self.primordial_pity_label.configure(text=f"Primordial Pity: {self.player.race_pity.primordial_pity_counter} / 1000")
         race = self.player.race
         if race is None:
             self.name_label.configure(text="Current Race: None")
@@ -144,10 +147,6 @@ class RacePanel(ctk.CTkFrame):
         self.rarity_label.configure(text=f"Current Rarity: {race.rarity_name}", text_color=color)
         self.range_label.configure(text=f"Potential Range: {race.potential_range}", text_color=color)
         self.multiplier_label.configure(text=f"Maximum Multiplier: {race.max_multiplier}x", text_color=color)
-        self.pity_label.configure(text=f"Race Rolls: {self.player.race_pity.total_race_rolls}")
-        self.mythical_pity_label.configure(text=f"Mythical Pity: {self.player.race_pity.mythical_pity_counter} / 100")
-        self.primordial_pity_label.configure(text=f"Primordial Pity: {self.player.race_pity.primordial_pity_counter} / 1000")
-
         if self.player.race_accepted:
             self.status_label.configure(text="Race accepted. Stat potentials are now unlocked.")
             self.roll_button.configure(state="disabled")

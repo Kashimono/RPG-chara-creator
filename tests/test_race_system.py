@@ -1,5 +1,5 @@
 from RPG.core.player import Player
-from RPG.core.race import Race
+from RPG.core.race import Race, RaceManager, Rarity
 
 
 def test_player_can_preview_and_accept_a_race() -> None:
@@ -39,3 +39,31 @@ def test_player_save_round_trip_preserves_race_data() -> None:
     assert restored.race_min_potential == 10_000_000
     assert restored.race_max_potential == 1_000_000_000
     assert restored.race_accepted is True
+
+
+def test_race_roll_updates_pity_and_uses_rarity_table(monkeypatch) -> None:
+    player = Player()
+    monkeypatch.setattr(RaceManager, "roll_rarity", staticmethod(lambda: Rarity.RARE))
+
+    race = player.roll_race()
+
+    assert race.rarity is Rarity.RARE
+    assert player.race_name == race.name
+    assert player.race_pity.total_race_rolls == 1
+    assert player.race_pity.mythical_pity_counter == 1
+    assert player.race_pity.primordial_pity_counter == 1
+
+
+def test_stat_potential_acceptance_finishes_character_creation(monkeypatch) -> None:
+    player = Player()
+    player.set_preview_race(Race("Test Race", "Rare", 10, 20, 50))
+    player.accept_race()
+    monkeypatch.setattr("RPG.core.stat.random.randint", lambda low, high: high)
+
+    for name in player.stats:
+        assert player.roll_stat_potential(name) == 20
+        player.accept_stat_potential(name)
+
+    assert player.character_created
+    assert player.level == 1
+    assert all(stat.accepted and stat.potential == 20 for stat in player.stats.values())

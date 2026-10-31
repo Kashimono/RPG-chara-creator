@@ -1,170 +1,186 @@
+"""Navigation shell and application-level actions."""
+
+from __future__ import annotations
+
 import tkinter as tk
 from tkinter import messagebox, simpledialog
+
 import customtkinter as ctk
-from .themes import apply_theme
-from .potential_panel import PotentialPanel
-from .race_panel import RacePanel
-from .stat_panel import StatPanel
-from .level_panel import LevelPanel
-from .advanced_panel import AdvancedPanel
-from .save_dialog import LoadSaveDialog
-from ..config import BACKGROUND_COLOR, FONT_BODY, FONT_HEADING, FONT_LABEL, PADDING, TEXT_COLOR
+
+from ..config import BACKGROUND_COLOR, PADDING, SECONDARY_TEXT, SURFACE_COLOR, TEXT_COLOR
+from ..core.character import format_character_profile
+from ..core.game_config import APP_TITLE
 from ..core.game_state import GameState
-from ..core.save_manager import SaveManager
+from ..managers.save_manager import SaveManager
+from ..managers.settings_manager import SettingsManager
+from .navigation import NavigationSidebar
+from .pages.character import CharacterPage
+from .pages.combat import CombatPage
+from .pages.dashboard import DashboardPage
+from .pages.inventory import InventoryPage
+from .pages.settings import SettingsPage
+from .save_dialog import LoadSaveDialog
+from .themes import apply_theme
 
 
 class MainWindow(ctk.CTk):
     def __init__(self, game_state: GameState) -> None:
+        apply_theme(game_state.game_settings.get("theme", "Dark"))
         super().__init__()
-        apply_theme()
-        self.title("RPG Stat Workshop")
-        self.geometry(f"{1180}x{780}")
-        self.minsize(1120, 720)
+        self.title(APP_TITLE)
+        self.geometry("1360x900")
+        self.minsize(1100, 700)
         self.configure(fg_color=BACKGROUND_COLOR)
 
         self.game_state = game_state
-        self.player = self.game_state.player
         self.current_save_file: str | None = None
         self.is_dirty = False
-
+        self._status_after_id: str | None = None
         self.protocol("WM_DELETE_WINDOW", self.on_exit)
-
         self._build_interface()
-        self.refresh()
+        self.refresh_views()
+        self.show_page("dashboard")
 
     def _build_interface(self) -> None:
-        self.grid_columnconfigure(0, weight=5)
-        self.grid_columnconfigure(1, weight=4)
+        self.grid_columnconfigure(0, weight=0)
+        self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(0, weight=0)
         self.grid_rowconfigure(1, weight=1)
 
-        header_frame = ctk.CTkFrame(self, fg_color="#171b21", corner_radius=20)
-        header_frame.grid(row=0, column=0, columnspan=2, padx=PADDING, pady=PADDING, sticky="nsew")
-        header_frame.grid_columnconfigure(0, weight=1)
-        header_frame.grid_columnconfigure(1, weight=1)
+        self.navigation = NavigationSidebar(self, self.show_page, self.new_game, self.save_game, self.load_game)
+        self.navigation.grid(row=0, column=0, rowspan=2, sticky="nsew")
 
-        title = ctk.CTkLabel(header_frame, text="RPG Character Builder", font=FONT_HEADING, text_color=TEXT_COLOR)
-        title.grid(row=0, column=0, sticky="w", padx=16, pady=(16, 4))
+        header = ctk.CTkFrame(self, fg_color=SURFACE_COLOR, corner_radius=16)
+        header.grid(row=0, column=1, sticky="ew", padx=PADDING, pady=(PADDING, 10))
+        header.grid_columnconfigure(0, weight=1)
+        ctk.CTkLabel(header, text=APP_TITLE, anchor="w", font=ctk.CTkFont(size=18, weight="bold"), text_color=TEXT_COLOR).grid(row=0, column=0, sticky="w", padx=18, pady=(12, 0))
+        self.status_label = ctk.CTkLabel(header, text="Ready", anchor="e", font=ctk.CTkFont(size=12), text_color=SECONDARY_TEXT)
+        self.status_label.grid(row=0, column=1, sticky="e", padx=18, pady=(12, 0))
+        self.game_status_label = ctk.CTkLabel(header, text="New game", anchor="e", font=ctk.CTkFont(size=11), text_color=SECONDARY_TEXT)
+        self.game_status_label.grid(row=1, column=0, columnspan=2, sticky="e", padx=18, pady=(2, 12))
 
-        subtitle = ctk.CTkLabel(header_frame,
-                                text="Roll potentials, lock them in, then level up and allocate stats.",
-                                font=FONT_LABEL,
-                                text_color="#9aa3b8")
-        subtitle.grid(row=1, column=0, sticky="w", padx=16, pady=(0, 16))
+        self.page_container = ctk.CTkFrame(self, fg_color=BACKGROUND_COLOR, corner_radius=0)
+        self.page_container.grid(row=1, column=1, sticky="nsew", padx=(PADDING, PADDING), pady=(0, PADDING))
+        self.page_container.grid_columnconfigure(0, weight=1)
+        self.page_container.grid_rowconfigure(0, weight=1)
 
-        self.level_summary = ctk.CTkLabel(header_frame, text="Level: 0", font=FONT_BODY, text_color=TEXT_COLOR)
-        self.level_summary.grid(row=0, column=1, sticky="e", padx=16)
+        self.pages = {
+            "dashboard": DashboardPage(self.page_container, lambda: self.game_state, self.show_page),
+            "character": CharacterPage(self.page_container, self),
+            "combat": CombatPage(self.page_container),
+            "inventory": InventoryPage(self.page_container),
+            "settings": SettingsPage(
+                self.page_container,
+                lambda: self.game_state,
+                self.update_setting,
+                self.reset_settings,
+            ),
+        }
+        for page in self.pages.values():
+            page.grid(row=0, column=0, sticky="nsew")
 
-        self.pool_summary = ctk.CTkLabel(header_frame, text="Stat Points: 0", font=FONT_BODY, text_color=TEXT_COLOR)
-        self.pool_summary.grid(row=1, column=1, sticky="e", padx=16)
+    def show_page(self, page_id: str) -> None:
+        page = self.pages.get(page_id)
+        if page is None:
+            return
+        page.tkraise()
+        self.navigation.select_page(page_id)
+        self.refresh_views()
 
-        self.save_status = ctk.CTkLabel(header_frame, text="", font=FONT_LABEL, text_color="#65d16d")
-        self.save_status.grid(row=2, column=0, columnspan=2, sticky="w", padx=16, pady=(0, 12))
+    def refresh_views(self) -> None:
+        for page in self.pages.values():
+            refresh = getattr(page, "refresh", None)
+            if callable(refresh):
+                refresh()
+        if self.is_dirty:
+            self.game_status_label.configure(text="Unsaved changes", text_color="#e7bd65")
+        elif self.current_save_file:
+            self.game_status_label.configure(text=f"Saved: {self.current_save_file}", text_color="#65d16d")
+        else:
+            self.game_status_label.configure(text="New game", text_color=SECONDARY_TEXT)
 
-        menu_frame = ctk.CTkFrame(header_frame, fg_color="#161a20", corner_radius=14)
-        menu_frame.grid(row=3, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 16))
-        menu_frame.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
-
-        new_game_button = ctk.CTkButton(menu_frame, text="New Game", command=self.new_game, corner_radius=12)
-        new_game_button.grid(row=0, column=0, padx=6, pady=8, sticky="ew")
-
-        save_game_button = ctk.CTkButton(menu_frame, text="Save Game", command=self.save_game, corner_radius=12)
-        save_game_button.grid(row=0, column=1, padx=6, pady=8, sticky="ew")
-
-        load_game_button = ctk.CTkButton(menu_frame, text="Load Game", command=self.load_game, corner_radius=12)
-        load_game_button.grid(row=0, column=2, padx=6, pady=8, sticky="ew")
-
-        copy_stats_button = ctk.CTkButton(
-            menu_frame,
-            text="Copy Character Stats",
-            command=self.copy_character_stats,
-            corner_radius=12,
-        )
-        copy_stats_button.grid(row=0, column=3, padx=6, pady=8, sticky="ew")
-
-        exit_button = ctk.CTkButton(menu_frame, text="Exit", command=self.on_exit, corner_radius=12)
-        exit_button.grid(row=0, column=4, padx=6, pady=8, sticky="ew")
-
-        self.race_panel = RacePanel(self, self.player, self.refresh)
-        self.race_panel.grid(row=1, column=0, padx=(PADDING, 8), pady=(0, PADDING), sticky="nsew")
-
-        self.potential_panel = PotentialPanel(self, self.player, self.refresh)
-        self.potential_panel.grid(row=2, column=0, padx=(PADDING, 8), pady=(0, PADDING), sticky="nsew")
-
-        side_panel = ctk.CTkFrame(self, fg_color=BACKGROUND_COLOR, corner_radius=0)
-        side_panel.grid(row=1, column=1, padx=(8, PADDING), pady=(0, PADDING), sticky="nsew")
-        side_panel.grid_rowconfigure(0, weight=0)
-        side_panel.grid_rowconfigure(1, weight=1)
-
-        self.level_panel = LevelPanel(side_panel, self.player, self.refresh)
-        self.level_panel.grid(row=0, column=0, sticky="ew", pady=(0, 12))
-
-        self.stat_panel = StatPanel(side_panel, self.player, self.refresh)
-        self.stat_panel.grid(row=1, column=0, sticky="nsew")
-
-        self.advanced_panel = AdvancedPanel(side_panel, self.player, self.refresh)
-        self.advanced_panel.grid(row=2, column=0, sticky="ew", pady=(12, 0))
-
-    def refresh(self) -> None:
-        self.player = self.game_state.player
-        self.race_panel.player = self.player
-        self.potential_panel.player = self.player
-        self.level_panel.player = self.player
-        self.stat_panel.player = self.player
-        self.advanced_panel.player = self.player
-
-        summary = self.player.get_summary()
-        self.level_summary.configure(text=f"Level: {summary['level']}")
-        self.pool_summary.configure(text=f"Stat Points: {summary['stat_points']}")
-        self.race_panel.refresh()
-        self.potential_panel.refresh()
-        self.level_panel.refresh()
-        self.stat_panel.refresh()
-        self.advanced_panel.refresh()
+    def handle_game_change(self) -> None:
+        self.is_dirty = True
+        self.refresh_views()
 
     def new_game(self) -> None:
-        if self.is_dirty:
-            if not messagebox.askyesno("Confirm New Game", "Unsaved progress will be lost. Start a new game?"):
-                return
-        self.game_state = GameState()
-        self.player = self.game_state.player
+        if self.is_dirty and not messagebox.askyesno(
+            "Confirm New Game",
+            "Unsaved progress will be lost. Start a new game?",
+            parent=self,
+        ):
+            return
+        settings = dict(self.game_state.game_settings)
+        self.game_state = GameState(game_settings=settings)
         self.current_save_file = None
         self.is_dirty = False
-        self.save_status.configure(text="New game started.")
-        self.refresh()
+        self.refresh_views()
+        self.show_status("New game started.")
 
-    def save_game(self) -> None:
-        if self.current_save_file is None:
-            raw_save_name = simpledialog.askstring(
-                "Save As",
-                "Enter a name for this save file:",
-                parent=self,
-            )
-            self.current_save_file = SaveManager.normalize_filename(raw_save_name)
+    def save_game(self) -> bool:
+        filename = self.current_save_file
+        if filename is None:
+            raw_name = simpledialog.askstring("Save As", "Enter a name for this save file:", parent=self)
+            if raw_name is None:
+                return False
+            filename = SaveManager.normalize_filename(raw_name)
 
-        SaveManager.save(self.game_state, self.current_save_file)
+        try:
+            exists = SaveManager.get_save_path(filename).exists()
+        except ValueError as exc:
+            messagebox.showerror("Save Error", str(exc), parent=self)
+            return False
+        if exists and not messagebox.askyesno(
+            "Overwrite Save",
+            f"A save named '{filename}' already exists. Overwrite it?",
+            parent=self,
+        ):
+            return False
+
+        try:
+            SaveManager.save(self.game_state, filename, overwrite=exists)
+        except (OSError, ValueError, FileExistsError) as exc:
+            messagebox.showerror("Save Error", str(exc), parent=self)
+            return False
+
+        self.current_save_file = filename
         self.is_dirty = False
-        self.show_status(f"Saved: {self.current_save_file}")
+        self.refresh_views()
+        self.show_status(f"Saved: {filename}")
+        return True
 
     def load_game(self) -> None:
+        if self.is_dirty and not messagebox.askyesno(
+            "Discard Unsaved Changes",
+            "Loading a save will discard your unsaved progress. Continue?",
+            parent=self,
+        ):
+            return
         save_files = SaveManager.list_save_files()
-        save_timestamps = {filename: SaveManager.get_save_timestamp(filename) for filename in save_files}
-        dialog = LoadSaveDialog(self, save_files, save_timestamps)
+        timestamps = {filename: SaveManager.get_save_timestamp(filename) for filename in save_files}
+        dialog = LoadSaveDialog(self, save_files, timestamps)
         self.wait_window(dialog)
         if not dialog.result:
             return
         try:
-            self.game_state = SaveManager.load(dialog.result)
-            self.player = self.game_state.player
-            self.current_save_file = dialog.result
-            self.is_dirty = False
-            self.show_status(f"Loaded {dialog.result}")
-            self.refresh()
-        except Exception as exc:
-            messagebox.showerror("Load Error", str(exc))
+            loaded_state = SaveManager.load(dialog.result)
+        except (OSError, ValueError, FileNotFoundError) as exc:
+            messagebox.showerror("Load Error", str(exc), parent=self)
+            return
+
+        was_legacy = loaded_state.loaded_from_legacy
+        self.game_state = loaded_state
+        self.current_save_file = dialog.result
+        self.is_dirty = False
+        apply_theme(self.game_state.game_settings.get("theme", "Dark"))
+        self.refresh_views()
+        if was_legacy:
+            self.show_status(f"Loaded legacy save: {dialog.result}. It will migrate when you save.")
+        else:
+            self.show_status(f"Loaded: {dialog.result}")
 
     def copy_character_stats(self) -> None:
-        player = self.game_state.player
+        player = self.game_state.character
         if not player.character_created:
             messagebox.showinfo(
                 "No Character",
@@ -172,39 +188,47 @@ class MainWindow(ctk.CTk):
                 parent=self,
             )
             return
-
-        profile = player.get_character_profile()
-        stats = profile["stats"]
-        profile_text = (
-            "========== CHARACTER PROFILE ==========\n\n"
-            f"Race: {profile['race']}\n"
-            f"Rarity: {profile['rarity']}\n"
-            f"Level: {profile['level']}\n\n"
-            "========== CHARACTER STATS ==========\n\n"
-            f"HP: {stats['HP']}\n"
-            f"MP: {stats['MP']}\n"
-            f"Attack: {stats['Attack']}\n"
-            f"Agility: {stats['Agility']}\n"
-            f"Stamina: {stats['Stamina']}\n\n"
-            "======================================="
-        )
-
         try:
             self.clipboard_clear()
-            self.clipboard_append(profile_text)
+            self.clipboard_append(format_character_profile(player))
             self.update()
         except tk.TclError as exc:
             messagebox.showerror("Clipboard Error", f"Could not copy character stats.\n\n{exc}", parent=self)
             return
-
         self.show_status("Character stats copied to clipboard.")
 
+    def update_setting(self, key: str, value: object) -> None:
+        try:
+            self.game_state.game_settings = SettingsManager.set_setting(self.game_state.game_settings, key, value)
+        except (KeyError, ValueError) as exc:
+            messagebox.showerror("Settings Error", str(exc), parent=self)
+            return
+        if key == "theme":
+            apply_theme(str(value))
+        self.handle_game_change()
+
+    def reset_settings(self) -> None:
+        if not messagebox.askyesno("Reset Settings", "Restore the default application preferences?", parent=self):
+            return
+        self.game_state.game_settings = SettingsManager.reset()
+        apply_theme(self.game_state.game_settings["theme"])
+        self.handle_game_change()
+        self.show_status("Settings restored to defaults.")
+
     def show_status(self, message: str) -> None:
-        self.save_status.configure(text=message)
-        self.after(2500, lambda: self.save_status.configure(text=""))
+        if self._status_after_id:
+            self.after_cancel(self._status_after_id)
+        self.status_label.configure(text=message, text_color=TEXT_COLOR)
+        self._status_after_id = self.after(
+            3500,
+            lambda: self.status_label.configure(text="Ready", text_color=SECONDARY_TEXT),
+        )
 
     def on_exit(self) -> None:
-        if self.is_dirty:
-            if not messagebox.askyesno("Confirm Exit", "You have unsaved changes. Exit anyway?"):
-                return
+        if self.is_dirty and not messagebox.askyesno(
+            "Confirm Exit",
+            "You have unsaved changes. Exit anyway?",
+            parent=self,
+        ):
+            return
         self.destroy()

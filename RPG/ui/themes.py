@@ -1,6 +1,5 @@
-import customtkinter as ctk
+from ..config import configure_app_theme
 
 
-def apply_theme() -> None:
-    ctk.set_appearance_mode("dark")
-    ctk.set_default_color_theme("dark-blue")
+def apply_theme(mode: str = "Dark") -> None:
+    configure_app_theme(mode)

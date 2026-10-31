@@ -101,12 +101,15 @@ class Race:
     max_multiplier: int = 10
     text_color: str | None = None
     roll_chance: float = 0.0
+    bonus_profile: str | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.rarity, Rarity):
             object.__setattr__(self, "rarity", Rarity.from_value(self.rarity))
         if self.text_color is None:
             object.__setattr__(self, "text_color", self.rarity.color_hex)
+        if self.bonus_profile is None:
+            object.__setattr__(self, "bonus_profile", self.rarity.value.lower())
         if self.min_potential == 0 and self.max_potential == 0:
             object.__setattr__(self, "min_potential", self.rarity.min_potential)
             object.__setattr__(self, "max_potential", self.rarity.max_potential)
@@ -128,6 +131,7 @@ class Race:
             "max_multiplier": self.max_multiplier,
             "text_color": self.text_color,
             "roll_chance": self.roll_chance,
+            "bonus_profile": self.bonus_profile,
         }
 
     @classmethod
@@ -140,6 +144,7 @@ class Race:
             max_multiplier=int(data.get("max_multiplier", 10)),
             text_color=data.get("text_color"),
             roll_chance=float(data.get("roll_chance", 0.0)),
+            bonus_profile=data.get("bonus_profile"),
         )
 
 
@@ -201,7 +206,7 @@ class RaceDatabase:
             Race("Moonreed", Rarity.UNCOMMON, 100, 1_000, 25),
             Race("Birchflame", Rarity.UNCOMMON, 100, 1_000, 25),
             Race("Hollowfern", Rarity.UNCOMMON, 100, 1_000, 25),
-            Race("Sylvara", Rarity.RARE, 1_000, 20_000, 50),
+            Race("Sylvara", Rarity.RARE, 1_000, 20_000, 50, bonus_profile="verdant"),
             Race("Duskmarrow", Rarity.RARE, 1_000, 20_000, 50),
             Race("Ironbloom", Rarity.RARE, 1_000, 20_000, 50),
             Race("Froststep", Rarity.RARE, 1_000, 20_000, 50),
@@ -216,10 +221,10 @@ class RaceDatabase:
             Race("Gravebranch", Rarity.RARE, 1_000, 20_000, 50),
             Race("Shiverhollow", Rarity.RARE, 1_000, 20_000, 50),
             Race("Rimebloom", Rarity.RARE, 1_000, 20_000, 50),
-            Race("Wyrmkin", Rarity.EPIC, 5_000, 100_000, 100),
+            Race("Wyrmkin", Rarity.EPIC, 5_000, 100_000, 100, bonus_profile="draconic"),
             Race("Starforged", Rarity.EPIC, 5_000, 100_000, 100),
             Race("Voidcaller", Rarity.EPIC, 5_000, 100_000, 100),
-            Race("Aetherborne", Rarity.EPIC, 5_000, 100_000, 100),
+            Race("Aetherborne", Rarity.EPIC, 5_000, 100_000, 100, bonus_profile="arcane"),
             Race("Dawnclad", Rarity.EPIC, 5_000, 100_000, 100),
             Race("Obsidian Warden", Rarity.EPIC, 5_000, 100_000, 100),
             Race("Celestine Shade", Rarity.EPIC, 5_000, 100_000, 100),
@@ -230,11 +235,11 @@ class RaceDatabase:
             Race("Moon Regent", Rarity.LEGENDARY, 100_000, 1_000_000, 250),
             Race("Worldshaper", Rarity.LEGENDARY, 100_000, 1_000_000, 250),
             Race("Tempest Emperor", Rarity.LEGENDARY, 100_000, 1_000_000, 250),
-            Race("Phoenix Herald", Rarity.MYTHICAL, 1_000_000, 10_000_000, 500),
+            Race("Phoenix Herald", Rarity.MYTHICAL, 1_000_000, 10_000_000, 500, bonus_profile="phoenix"),
             Race("Abyssal Sovereign", Rarity.MYTHICAL, 1_000_000, 10_000_000, 500),
             Race("Celestial Choir", Rarity.MYTHICAL, 1_000_000, 10_000_000, 500),
             Race("Primordial Maw", Rarity.PRIMORDIAL, 10_000_000, 1_000_000_000, 1000),
-            Race("World-First Spirit", Rarity.PRIMORDIAL, 10_000_000, 1_000_000_000, 1500),
+            Race("World-First Spirit", Rarity.PRIMORDIAL, 10_000_000, 1_000_000_000, 1500, bonus_profile="world_first"),
         ]
 
     def get_all_races(self) -> List[Race]:

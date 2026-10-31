@@ -14,6 +14,7 @@ class NavigationSidebar(ctk.CTkFrame):
         ("dashboard", "Dashboard"),
         ("character", "Character"),
         ("combat", "Combat"),
+        ("economy", "Economy"),
         ("inventory", "Inventory"),
         ("settings", "Settings"),
     )
@@ -29,7 +30,7 @@ class NavigationSidebar(ctk.CTkFrame):
         super().__init__(parent, width=214, corner_radius=0, fg_color="#14171c")
         self.grid_propagate(False)
         self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(7, weight=1)
+        self.grid_rowconfigure(8, weight=1)
         self._navigate = navigate
         self._page_buttons: dict[str, ctk.CTkButton] = {}
 
@@ -61,10 +62,10 @@ class NavigationSidebar(ctk.CTkFrame):
             self._page_buttons[page_id] = button
 
         actions_title = ctk.CTkLabel(self, text="GAME", anchor="w", font=ctk.CTkFont(size=11, weight="bold"), text_color=SECONDARY_TEXT)
-        actions_title.grid(row=8, column=0, sticky="ew", padx=20, pady=(14, 8))
+        actions_title.grid(row=9, column=0, sticky="ew", padx=20, pady=(14, 8))
         for row, (label, command) in enumerate(
             (("New Game", new_game), ("Save Game", save_game), ("Load Game", load_game)),
-            start=9,
+            start=10,
         ):
             ctk.CTkButton(
                 self,

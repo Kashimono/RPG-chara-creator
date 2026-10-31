@@ -17,6 +17,7 @@ from .navigation import NavigationSidebar
 from .pages.character import CharacterPage
 from .pages.combat import CombatPage
 from .pages.dashboard import DashboardPage
+from .pages.economy import EconomyPage
 from .pages.inventory import InventoryPage
 from .pages.settings import SettingsPage
 from .save_dialog import LoadSaveDialog
@@ -72,6 +73,11 @@ class MainWindow(ctk.CTk):
                 lambda: self.game_state,
                 self.handle_game_change,
                 self.mark_game_dirty,
+            ),
+            "economy": EconomyPage(
+                self.page_container,
+                lambda: self.game_state,
+                self.handle_game_change,
             ),
             "inventory": InventoryPage(self.page_container),
             "settings": SettingsPage(

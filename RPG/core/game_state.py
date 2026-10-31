@@ -8,6 +8,7 @@ from uuid import uuid4
 from .game_config import SAVE_SCHEMA_VERSION, normalize_game_settings
 from .player import Player
 from ..systems.combat.combat_stats import CombatStatistics
+from ..systems.economy.currency import EconomyState
 
 
 class GameState:
@@ -27,6 +28,7 @@ class GameState:
         created_at: str | None = None,
         last_saved: str | None = None,
         combat_statistics: CombatStatistics | Mapping[str, Any] | None = None,
+        economy: EconomyState | Mapping[str, Any] | None = None,
     ) -> None:
         self.player = player if player is not None else Player()
         self.game_settings = normalize_game_settings(dict(game_settings or {}))
@@ -38,6 +40,7 @@ class GameState:
             self.combat_statistics = combat_statistics
         else:
             self.combat_statistics = CombatStatistics.from_dict(combat_statistics or {})
+        self.economy = economy if isinstance(economy, EconomyState) else EconomyState.from_dict(economy or {})
 
     @property
     def character(self) -> Player:
@@ -57,6 +60,7 @@ class GameState:
             "save_version": self.SAVE_VERSION,
             "character": self.character.to_dict(),
             "combat_statistics": self.combat_statistics.to_dict(),
+            "economy": self.economy.to_dict(),
             "game_settings": dict(self.game_settings),
             "metadata": {
                 "save_id": self.save_id,
@@ -104,6 +108,7 @@ class GameState:
             created_at=metadata.get("created_at"),
             last_saved=metadata.get("last_saved"),
             combat_statistics=data.get("combat_statistics", {}),
+            economy=data.get("economy", {}),
         )
         state.loaded_from_legacy = version < cls.SAVE_VERSION or "character" not in data
         return state
@@ -118,6 +123,7 @@ class GameState:
         self.last_saved = loaded.last_saved
         self.loaded_from_legacy = loaded.loaded_from_legacy
         self.combat_statistics = loaded.combat_statistics
+        self.economy = loaded.economy
 
     def take_combat_damage(self, amount: float) -> float:
         return self.character.take_damage(amount)

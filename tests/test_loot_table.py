@@ -61,3 +61,25 @@ def test_loader_and_missing_table_errors_are_readable(tmp_path):
 def test_duplicate_loot_table_ids_are_detected_without_case_sensitivity():
     with pytest.raises(LootTableError, match="Duplicate loot table IDs"):
         LootTableDatabase.from_tables([LootTable("Small", ()), LootTable("small", ())])
+
+
+def test_currency_entries_roll_and_same_reward_id_keeps_currency_separate_from_items():
+    table = LootTable("mixed", (
+        LootEntry("gold_cache", 1.0, 2, 2, guaranteed=True, currency_type="gold"),
+        LootEntry("gold_cache", 1.0, 3, 3, guaranteed=True),
+    ))
+
+    drops = table.roll(FixedLootRandom([], [2, 3]))
+
+    assert [(drop.reward_id, drop.quantity, drop.currency_type) for drop in drops] == [
+        ("gold_cache", 2, "gold"),
+        ("gold_cache", 3, None),
+    ]
+
+
+def test_unknown_currency_type_is_rejected_and_existing_tables_still_load():
+    with pytest.raises(ValueError, match="unsupported currency"):
+        LootEntry("bad", 1, currency_type="gems")
+    database = LootTableDatabase.load_default()
+    assert database.has("common_drop")
+    assert any(entry.currency_type == "gold" for entry in database.get_by_id("world_boss_drop").entries)

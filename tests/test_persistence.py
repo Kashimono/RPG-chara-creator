@@ -115,6 +115,51 @@ def test_version_two_save_migrates_with_progression_defaults(saves_dir) -> None:
     assert json.loads(path.read_text(encoding="utf-8")) == original
 
 
+def test_version_three_save_defaults_hp_and_combat_statistics(saves_dir) -> None:
+    player = Player()
+    player.character_created = True
+    player.stats["HP"].current = 50
+    character_data = player.to_dict()
+    character_data.pop("current_hp")
+    path = saves_dir / "version_three.json"
+    path.parent.mkdir(parents=True)
+    original = {
+        "save_version": 3,
+        "character": character_data,
+        "game_settings": {"theme": "Dark", "sound_enabled": False},
+        "metadata": {},
+    }
+    path.write_text(json.dumps(original), encoding="utf-8")
+
+    loaded = SaveManager.load("version_three.json")
+
+    assert loaded.loaded_from_legacy
+    assert loaded.character.current_hp == loaded.character.maximum_hp
+    assert loaded.combat_statistics.total_attacks_performed == 0
+    assert json.loads(path.read_text(encoding="utf-8")) == original
+
+
+def test_version_four_save_persists_current_hp_and_combat_statistics(saves_dir) -> None:
+    state = GameState()
+    state.player.character_created = True
+    state.player.stats["HP"].current = 100
+    state.player.set_current_hp(37.5)
+    state.record_player_attack(42.5, critical=True)
+    state.record_damage_received(9.25)
+    state.record_enemy_defeated(25)
+
+    SaveManager.save(state, "combat.json")
+    restored = SaveManager.load("combat.json")
+
+    assert restored.character.current_hp == 37.5
+    assert restored.combat_statistics.total_damage_dealt == 42.5
+    assert restored.combat_statistics.total_damage_received == 9.25
+    assert restored.combat_statistics.total_enemies_defeated == 1
+    assert restored.combat_statistics.total_critical_hits == 1
+    assert restored.combat_statistics.total_attacks_performed == 1
+    assert restored.combat_statistics.total_exp_earned == 25
+
+
 def test_raw_legacy_player_shape_is_accepted() -> None:
     restored = GameState.from_dict({"level": 4, "stats": {}, "character_created": True})
 

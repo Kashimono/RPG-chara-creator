@@ -1,23 +1,24 @@
 # RPG: World of Ascension
 
-A dark fantasy character progression builder made with Python and CustomTkinter. The application has a persistent sidebar, a shared `GameState`, versioned JSON saves, and logic modules that do not depend on the UI.
+A dark fantasy clicker RPG made with Python and CustomTkinter. The application has a persistent sidebar, a shared `GameState`, versioned JSON saves, and game rules that do not depend on the UI.
 
 ## Implemented features
 
 - Roll a race from seven rarity tiers, review drop rates and pity counters, and accept the race.
 - Roll and accept stat potentials for HP, MP, Attack, Agility, and Stamina; allocate earned stat points within each accepted potential.
 - Gain EXP and automatically level up, including multiple levels and EXP overflow. Each level awards 10 stat points.
-- View an EXP progress bar and use clearly marked direct level/EXP controls for progression testing. No combat EXP reward source is implemented yet.
+- View an EXP progress bar and use clearly marked direct level/EXP controls for progression testing.
 - Apply race passive profiles and choose a class with passive bonuses. Race and class effects are calculated from base attributes and are not written back into them.
 - Unlock and equip cosmetic titles at level milestones.
 - View Physical Defense, Magical Defense, Critical Chance, Critical Damage, Attack Speed, HP Regeneration, and MP Regeneration.
-- Save and load characters with version 3 JSON. Version 2, version 1, and raw legacy saves receive defaults for the new fields and are only migrated on an explicit save.
-- Use Dashboard, Character, Combat, Inventory, and Settings navigation. Combat and Inventory remain planned placeholders.
+- Fight five ordinary enemies with click attacks, critical hits, enemy attacks, HP regeneration, retreat, recovery, timed respawns, and EXP rewards.
+- Save and load characters with version 4 JSON. Version 3, version 2, version 1, and raw legacy saves receive defaults and are only migrated on an explicit save.
+- Use Dashboard, Character, Combat, Inventory, and Settings navigation. Inventory remains a planned placeholder.
 - Copy the existing character profile to the clipboard and choose an appearance preference.
 
-Progression formulas, initial race and class passives, advanced stat formulas, and title requirements are documented in [`RPG/docs/PROGRESSION.md`](RPG/docs/PROGRESSION.md).
+Progression rules are documented in [`RPG/docs/PROGRESSION.md`](RPG/docs/PROGRESSION.md), and combat formulas and encounter behavior are documented in [`RPG/docs/COMBAT.md`](RPG/docs/COMBAT.md).
 
-No combat, enemy damage, equipment, functional inventory, skills, idle progression, offline rewards, summoning, or ascension is implemented in this update.
+This update does not add enemy databases beyond the five ordinary enemies, bosses, skills, equipment, functional inventory, idle combat, offline rewards, summoning, or ascension.
 
 ## Project structure
 
@@ -25,6 +26,7 @@ No combat, enemy damage, equipment, functional inventory, skills, idle progressi
 RPG/
   core/                 Character, race, stats, EXP, passives, and calculations
   managers/             Save and settings services
+  systems/combat/       Enemy definitions, damage rules, and encounter manager
   ui/
     main_window.py      Application shell and shared actions
     navigation.py       Persistent sidebar
@@ -74,4 +76,4 @@ Install the development requirements and run the suite from the project root:
 .\.venv\Scripts\python.exe -m pytest
 ```
 
-The game rules, progression, titles, attribute calculations, and save migration tests do not open the GUI.
+The game rules, progression, combat, titles, attribute calculations, and save migration tests do not open the GUI.

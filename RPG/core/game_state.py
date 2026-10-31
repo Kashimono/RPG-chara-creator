@@ -7,6 +7,7 @@ from uuid import uuid4
 
 from .game_config import SAVE_SCHEMA_VERSION, normalize_game_settings
 from .player import Player
+from ..systems.combat.combat_stats import CombatStatistics
 
 
 class GameState:
@@ -25,6 +26,7 @@ class GameState:
         save_id: str | None = None,
         created_at: str | None = None,
         last_saved: str | None = None,
+        combat_statistics: CombatStatistics | Mapping[str, Any] | None = None,
     ) -> None:
         self.player = player if player is not None else Player()
         self.game_settings = normalize_game_settings(dict(game_settings or {}))
@@ -32,6 +34,10 @@ class GameState:
         self.created_at = created_at
         self.last_saved = last_saved
         self.loaded_from_legacy = False
+        if isinstance(combat_statistics, CombatStatistics):
+            self.combat_statistics = combat_statistics
+        else:
+            self.combat_statistics = CombatStatistics.from_dict(combat_statistics or {})
 
     @property
     def character(self) -> Player:
@@ -50,6 +56,7 @@ class GameState:
         return {
             "save_version": self.SAVE_VERSION,
             "character": self.character.to_dict(),
+            "combat_statistics": self.combat_statistics.to_dict(),
             "game_settings": dict(self.game_settings),
             "metadata": {
                 "save_id": self.save_id,
@@ -96,6 +103,7 @@ class GameState:
             save_id=metadata.get("save_id"),
             created_at=metadata.get("created_at"),
             last_saved=metadata.get("last_saved"),
+            combat_statistics=data.get("combat_statistics", {}),
         )
         state.loaded_from_legacy = version < cls.SAVE_VERSION or "character" not in data
         return state
@@ -109,3 +117,22 @@ class GameState:
         self.created_at = loaded.created_at
         self.last_saved = loaded.last_saved
         self.loaded_from_legacy = loaded.loaded_from_legacy
+        self.combat_statistics = loaded.combat_statistics
+
+    def take_combat_damage(self, amount: float) -> float:
+        return self.character.take_damage(amount)
+
+    def heal_combat_hp(self, amount: float) -> float:
+        return self.character.heal(amount)
+
+    def award_combat_exp(self, amount: int) -> int:
+        return self.character.gain_exp(amount)
+
+    def record_player_attack(self, damage: float, critical: bool) -> None:
+        self.combat_statistics.record_player_attack(damage, critical)
+
+    def record_damage_received(self, damage: float) -> None:
+        self.combat_statistics.record_damage_received(damage)
+
+    def record_enemy_defeated(self, exp_reward: int) -> None:
+        self.combat_statistics.record_enemy_defeated(exp_reward)

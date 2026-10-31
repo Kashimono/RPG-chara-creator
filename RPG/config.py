@@ -1,6 +1,7 @@
 import customtkinter as ctk
+from .core.game_config import APP_TITLE
 
-WINDOW_TITLE = "RPG Stat Workshop"
+WINDOW_TITLE = APP_TITLE
 WINDOW_WIDTH = 1040
 WINDOW_HEIGHT = 720
 PADDING = 16
@@ -17,6 +18,6 @@ TEXT_COLOR = "#e6e9f0"
 SECONDARY_TEXT = "#9aa3b8"
 
 
-def configure_app_theme() -> None:
-    ctk.set_appearance_mode("dark")
+def configure_app_theme(mode: str = "Dark") -> None:
+    ctk.set_appearance_mode(mode)
     ctk.set_default_color_theme("dark-blue")

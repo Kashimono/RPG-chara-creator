@@ -134,5 +134,5 @@ class GameState:
     def record_damage_received(self, damage: float) -> None:
         self.combat_statistics.record_damage_received(damage)
 
-    def record_enemy_defeated(self, exp_reward: int) -> None:
-        self.combat_statistics.record_enemy_defeated(exp_reward)
+    def record_enemy_defeated(self, exp_reward: int, classification: str = "common") -> None:
+        self.combat_statistics.record_enemy_defeated(exp_reward, classification)

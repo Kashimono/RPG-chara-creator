@@ -1,0 +1,52 @@
+{
+  "loot_tables": [
+    {
+      "table_id": "common_drop",
+      "entries": [
+        { "reward_id": "monster_essence", "drop_chance": 0.2, "min_quantity": 1, "max_quantity": 2 }
+      ]
+    },
+    {
+      "table_id": "uncommon_drop",
+      "entries": [
+        { "reward_id": "monster_essence", "drop_chance": 0.45, "min_quantity": 1, "max_quantity": 3 },
+        { "reward_id": "beast_fang", "drop_chance": 0.2, "min_quantity": 1, "max_quantity": 2 }
+      ],
+      "max_drops": 3
+    },
+    {
+      "table_id": "rare_drop",
+      "entries": [
+        { "reward_id": "monster_essence", "drop_chance": 0.7, "min_quantity": 2, "max_quantity": 4 },
+        { "reward_id": "ancient_shard", "drop_chance": 0.35, "min_quantity": 1, "max_quantity": 2 }
+      ],
+      "max_drops": 3
+    },
+    {
+      "table_id": "elite_drop",
+      "entries": [
+        { "reward_id": "monster_essence", "drop_chance": 1.0, "min_quantity": 3, "max_quantity": 6, "guaranteed": true },
+        { "reward_id": "elite_core", "drop_chance": 0.45, "min_quantity": 1, "max_quantity": 1 }
+      ],
+      "max_drops": 3
+    },
+    {
+      "table_id": "boss_drop",
+      "entries": [
+        { "reward_id": "boss_trophy", "drop_chance": 1.0, "min_quantity": 1, "max_quantity": 1, "guaranteed": true },
+        { "reward_id": "dragon_scale", "drop_chance": 0.7, "min_quantity": 1, "max_quantity": 3 },
+        { "reward_id": "ancient_shard", "drop_chance": 1.0, "min_quantity": 2, "max_quantity": 5 }
+      ],
+      "max_drops": 5
+    },
+    {
+      "table_id": "world_boss_drop",
+      "entries": [
+        { "reward_id": "world_boss_trophy", "drop_chance": 1.0, "min_quantity": 1, "max_quantity": 1, "guaranteed": true },
+        { "reward_id": "primordial_essence", "drop_chance": 1.0, "min_quantity": 5, "max_quantity": 10, "guaranteed": true },
+        { "reward_id": "ancient_shard", "drop_chance": 0.8, "min_quantity": 5, "max_quantity": 12 }
+      ],
+      "max_drops": 6
+    }
+  ]
+}

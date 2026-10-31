@@ -11,22 +11,24 @@ A dark fantasy clicker RPG made with Python and CustomTkinter. The application h
 - Apply race passive profiles and choose a class with passive bonuses. Race and class effects are calculated from base attributes and are not written back into them.
 - Unlock and equip cosmetic titles at level milestones.
 - View Physical Defense, Magical Defense, Critical Chance, Critical Damage, Attack Speed, HP Regeneration, and MP Regeneration.
-- Fight five ordinary enemies with click attacks, critical hits, enemy attacks, HP regeneration, retreat, recovery, timed respawns, and EXP rewards.
-- Save and load characters with version 4 JSON. Version 3, version 2, version 1, and raw legacy saves receive defaults and are only migrated on an explicit save.
+- Fight a data-driven roster of 17 Common, Uncommon, Rare, Elite, Boss, and World Boss enemies with click attacks, enemy abilities, boss phases, structured loot rolls, HP regeneration, retreat, recovery, and EXP rewards.
+- Browse enemies by classification, start optional Elite encounters, and explicitly confirm Boss and World Boss challenges. The Common rotation retains the original five enemies and timed respawns.
+- Save and load characters with version 5 JSON. Version 4, version 3, version 2, version 1, and raw legacy saves preserve existing character/combat data and default the new encounter counters.
 - Use Dashboard, Character, Combat, Inventory, and Settings navigation. Inventory remains a planned placeholder.
 - Copy the existing character profile to the clipboard and choose an appearance preference.
 
-Progression rules are documented in [`RPG/docs/PROGRESSION.md`](RPG/docs/PROGRESSION.md), and combat formulas and encounter behavior are documented in [`RPG/docs/COMBAT.md`](RPG/docs/COMBAT.md).
+Progression rules are documented in [`RPG/docs/PROGRESSION.md`](RPG/docs/PROGRESSION.md). Combat formulas and encounter behavior are documented in [`RPG/docs/COMBAT.md`](RPG/docs/COMBAT.md), with enemy data, scaling, abilities, phases, and loot in [`RPG/docs/ENEMIES.md`](RPG/docs/ENEMIES.md).
 
-This update does not add enemy databases beyond the five ordinary enemies, bosses, skills, equipment, functional inventory, idle combat, offline rewards, summoning, or ascension.
+Loot currently appears as structured combat results only. This update does not add a functional inventory, Gold, equipment, player skills, idle or offline combat, world maps, dungeons, summoning, or ascension.
 
 ## Project structure
 
 ```text
 RPG/
   core/                 Character, race, stats, EXP, passives, and calculations
+  data/                 Enemy roster, enemy abilities, and loot table JSON
   managers/             Save and settings services
-  systems/combat/       Enemy definitions, damage rules, and encounter manager
+  systems/combat/       Enemy database, abilities, boss phases, loot, damage, and encounters
   ui/
     main_window.py      Application shell and shared actions
     navigation.py       Persistent sidebar

@@ -1,0 +1,21 @@
+{
+  "enemies": [
+    {
+      "enemy_id": "ancient_guardian", "name": "Ancient Guardian", "classification": "elite",
+      "description": "A stone sentinel that protects a sealed ruin from intruders.",
+      "max_hp": 14500, "attack": 520, "physical_defense": 460, "magical_defense": 250,
+      "exp_reward": 8500, "attack_interval": 2.5,
+      "abilities": ["heavy_strike", "defensive_stance", "regeneration"], "loot_table_id": "elite_drop",
+      "difficulty_multiplier": 1.0,
+      "scaling": { "enabled": true, "base_level": 1, "max_hp_per_level": 0.06, "attack_per_level": 0.04, "physical_defense_per_level": 0.035, "magical_defense_per_level": 0.03, "exp_per_level": 0.03 }
+    },
+    {
+      "enemy_id": "blood_knight", "name": "Blood Knight", "classification": "elite",
+      "description": "A relentless champion who turns every clash into a test of endurance.",
+      "max_hp": 12500, "attack": 680, "physical_defense": 380, "magical_defense": 300,
+      "exp_reward": 9200, "attack_interval": 2.0,
+      "abilities": ["piercing_strike", "enrage", "regeneration"], "loot_table_id": "elite_drop",
+      "scaling": { "enabled": true, "base_level": 1, "max_hp_per_level": 0.06, "attack_per_level": 0.045, "physical_defense_per_level": 0.03, "magical_defense_per_level": 0.03, "exp_per_level": 0.03 }
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "enemies": [
+    {
+      "enemy_id": "dragon_lord", "name": "Dragon Lord", "classification": "boss",
+      "description": "An ancient wyrm whose return has set the northern peaks ablaze.",
+      "max_hp": 85000, "attack": 1250, "physical_defense": 850, "magical_defense": 1100,
+      "exp_reward": 75000, "attack_interval": 2.6,
+      "abilities": ["heavy_strike", "enrage", "piercing_strike", "regeneration"], "loot_table_id": "boss_drop",
+      "scaling": { "enabled": true, "base_level": 1, "max_hp_per_level": 0.07, "attack_per_level": 0.05, "physical_defense_per_level": 0.04, "magical_defense_per_level": 0.04, "exp_per_level": 0.04 },
+      "boss_phases": [
+        { "phase_id": "dormant_flame", "name": "Dormant Flame", "hp_threshold": 1.0, "description": "The Dragon Lord measures its challenger.", "ability_ids": ["heavy_strike"] },
+        { "phase_id": "rising_embers", "name": "Rising Embers", "hp_threshold": 0.7, "description": "Its scales glow as the ancient fire wakes.", "attack_multiplier": 1.25, "attack_interval_multiplier": 0.9, "ability_ids": ["heavy_strike", "piercing_strike"] },
+        { "phase_id": "worldfire", "name": "Worldfire", "hp_threshold": 0.3, "description": "The mountain burns beneath its full fury.", "attack_multiplier": 1.6, "attack_interval_multiplier": 0.8, "physical_defense_multiplier": 1.15, "ability_ids": ["heavy_strike", "enrage", "piercing_strike", "regeneration"] }
+      ]
+    },
+    {
+      "enemy_id": "demon_sovereign", "name": "Demon Sovereign", "classification": "boss",
+      "description": "A crowned exile from the abyss seeking dominion over the mortal realm.",
+      "max_hp": 105000, "attack": 1480, "physical_defense": 780, "magical_defense": 1450,
+      "exp_reward": 90000, "attack_interval": 2.4,
+      "abilities": ["heavy_strike", "enrage", "defensive_stance", "piercing_strike"], "loot_table_id": "boss_drop",
+      "scaling": { "enabled": true, "base_level": 1, "max_hp_per_level": 0.07, "attack_per_level": 0.05, "physical_defense_per_level": 0.04, "magical_defense_per_level": 0.045, "exp_per_level": 0.04 },
+      "boss_phases": [
+        { "phase_id": "iron_crown", "name": "Iron Crown", "hp_threshold": 1.0, "description": "The Sovereign tests the strength of the challenger.", "ability_ids": ["heavy_strike", "defensive_stance"] },
+        { "phase_id": "broken_seal", "name": "Broken Seal", "hp_threshold": 0.6, "description": "The abyss answers its master's call.", "attack_multiplier": 1.35, "attack_interval_multiplier": 0.9, "ability_ids": ["heavy_strike", "defensive_stance", "piercing_strike"] },
+        { "phase_id": "abyss_unbound", "name": "Abyss Unbound", "hp_threshold": 0.25, "description": "Its final restraints fall away.", "attack_multiplier": 1.7, "attack_interval_multiplier": 0.78, "physical_defense_multiplier": 1.1, "ability_ids": ["heavy_strike", "enrage", "defensive_stance", "piercing_strike"] }
+      ]
+    }
+  ]
+}

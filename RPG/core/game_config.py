@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from typing import Any
 
-SAVE_SCHEMA_VERSION = 4
+SAVE_SCHEMA_VERSION = 5
 APP_TITLE = "RPG: World of Ascension"
-APP_VERSION = "0.4.0"
+APP_VERSION = "0.5.0"
 
 BASE_EXP_REQUIREMENT = 100
 EXP_GROWTH_RATE = 1.5

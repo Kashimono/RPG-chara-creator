@@ -1,67 +1,50 @@
-# Combat system
+# Combat System
 
-Update 2 adds active, click-driven physical combat. The rules live under `RPG/systems/combat/` and do not depend on CustomTkinter. `CombatManager` owns one transient encounter, while `GameState` remains the source of truth for character HP, EXP, and persistent combat statistics.
+Combat uses the existing `CombatManager`, `Enemy` encounter model, and one physical `DamageCalculator`. Gameplay rules stay independent of CustomTkinter. The Combat page sends player actions to the manager and services its clock through one cancellable 100 ms Tk callback.
 
-## Modules and state
+## Encounter flow
 
-- `enemy.py` defines immutable `EnemyDefinition` templates and mutable, uniquely identified `Enemy` encounter instances.
-- `combat_config.py` contains damage variation, mitigation, minimum damage, cooldown floor, recovery, respawn timing, and the initial five enemy definitions.
-- `damage_calculator.py` applies physical damage variation, critical hits, and defense mitigation using injected randomness.
-- `combat_stats.py` stores aggregate combat statistics.
-- `combat_manager.py` starts and ends encounters, processes attacks and rewards, and advances timed combat effects using caller-supplied time.
-- `ui/pages/combat.py` polls the manager through a single Tk `after` callback. It keeps combat active while another page is shown, cancels scheduling when combat ends or the page is destroyed, and does not use threads or blocking waits.
+- The default encounter button starts the next Common enemy in this order: Slime, Goblin, Wolf, Skeleton, Orc.
+- Common enemies respawn after two seconds and receive a new encounter UUID.
+- Uncommon and Rare enemies are explicitly selected and fought as one-off encounters.
+- Elites use the dedicated Start Elite action. The current update does not schedule random elite spawns.
+- Bosses and World Bosses use the dedicated Challenge Boss action. The page asks for confirmation; they never enter the Common rotation.
+- Only one encounter may run at a time. Retreat, player defeat, encounter defeat, save load, and application close stop temporary encounter effects and timers.
 
-The manager states are `IDLE`, `ACTIVE`, `ENEMY_DEFEATED`, `PLAYER_DEFEATED`, and `RECOVERING`. An encounter is not serialized. A new application session starts with no enemy or combat timer. A character saved at zero HP opens in the defeat recovery state; the player can recover before starting another encounter.
+## Damage and timing
 
-## Initial enemies
-
-| Enemy | HP | Attack | Physical Defense | Attack interval | EXP |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Slime | 100 | 5 | 0 | 2.0 s | 10 |
-| Goblin | 250 | 12 | 5 | 1.8 s | 25 |
-| Wolf | 400 | 18 | 8 | 1.5 s | 40 |
-| Skeleton | 750 | 30 | 15 | 2.0 s | 75 |
-| Orc | 1,500 | 50 | 30 | 2.5 s | 150 |
-
-Combat starts with the selected enemy. After a defeat, the next enemy in the configured sequence spawns after two seconds. The defeated enemy is processed once, so it awards EXP and increments statistics only once. The next encounter has a fresh ID and full HP.
-
-Newly created characters currently have no allocated HP or Attack and begin with zero stat points. Use the existing Character page EXP or direct-level testing control once to earn stat points, then allocate HP and Attack before the first encounter. Combat itself awards normal progression EXP after that setup.
-
-## Damage and cooldown formulas
-
-All player attributes come from `Player.calculated_attributes`, preserving Update 1's race/class passives and effective-stat multipliers.
+All player attributes come from `Player.calculated_attributes`, preserving race and class passives. The shared physical calculation remains in `damage_calculator.py`:
 
 ```text
 Player varied base = Effective Attack × uniform(0.90, 1.10)
 Player raw damage = varied base × (Critical Damage if critical, otherwise 1)
-Enemy varied base = Enemy Attack × uniform(0.90, 1.10)
+Enemy varied base = Effective Enemy Attack × uniform(0.90, 1.10)
 Damage reduction = Defense / (Defense + 1000)
 Final damage = max(1, raw damage × (1 - Damage reduction)) for positive raw damage
 Attack cooldown = max(0.05 seconds, 1 / Attack Speed)
 ```
 
-The critical roll uses the existing calculated Critical Chance, capped at the Update 1 limit. Critical damage uses the existing calculated Critical Damage multiplier. Player attacks are mitigated by the enemy's Physical Defense; enemy physical attacks are mitigated by the player's Physical Defense. Zero attack remains zero damage, and the minimum applies only to positive attacks. Magical Defense is displayed but unused until magical attacks are in scope.
+Player attacks use enemy Physical Defense. Enemy attacks use player Physical Defense. Piercing Strike supplies a configured effectiveness fraction to this same mitigation formula; the configuration rejects fractions below 5%. Magical Defense remains available to definitions and the UI, but no magical attack is implemented.
 
-Random sources and time are injectable into combat calculations and manager methods, so tests do not sleep or depend on real random outcomes.
+Enemy attacks use the configured interval. Player HP regeneration remains capped to 0.25 seconds per UI tick so a stalled app does not award offline healing. At zero HP, combat actions and scheduling stop. Recovery restores 50% of maximum HP. Existing click attacks, critical hits, player HP, retreat, recovery, and common respawning remain in place.
 
-## HP, recovery, and timing
+## Enemy content and mechanics
 
-Maximum HP is recalculated from the existing effective HP attribute. Current HP is separate from base stats, clamps to `0..maximum HP`, and persists on the character. A `null` saved current HP is the full-health sentinel used for new characters until they take damage; old saves without the field also begin at full health. When maximum HP rises, current HP remains unchanged after damage; if maximum HP falls below current HP, current HP is clamped down.
+See [Enemy Database and Encounters](ENEMIES.md) for data files, classifications, scaling formulas, abilities, phases, and loot configuration. The short version:
 
-While combat is active, HP regeneration uses the existing `HP Regeneration/sec` value times elapsed active time and never exceeds maximum HP. Regeneration catch-up is capped to 0.25 seconds per UI tick so a stalled or suspended app does not grant offline healing. Enemies attack on their configured interval. Retreat ends the encounter without a penalty. At zero HP, combat scheduling stops and actions are blocked. Recovery restores 50% of maximum HP, clears the defeated encounter, and returns the manager to `IDLE`.
-
-The UI services both regeneration and enemy attacks through one 100 ms `after` loop. The manager itself has no scheduler, sleeps, or threads. Retreat, defeat, game replacement, and application close stop or cancel the UI timer.
+- Static enemy and ability content lives in `RPG/data/` and is validated before the Combat page can use it.
+- `EnemyDatabase` handles definition loading and lookup. `Enemy` holds one uniquely identified encounter. `CombatManager` controls encounter timing, rewards, and state.
+- `EnemyAbilityRuntime` owns temporary cooldowns/effects. `BossManager` advances definition-driven phases and claims boss rewards once.
+- `LootTableDatabase` returns structured `LootDrop` values attached to the defeat `CombatEvent`. Drop IDs are feedback data only; no inventory, equipment, Gold, or economy is implemented in this update.
 
 ## EXP and statistics
 
-Enemy defeat calls `GameState.award_combat_exp`, which delegates to the existing `Player.gain_exp`. Existing overflow, multi-level progression, and 10 stat points per level therefore remain authoritative. Level and stat changes are visible immediately through the shared GameState.
+Defeat rewards use `GameState.award_combat_exp`, which delegates to `Player.gain_exp`. The existing progression system remains the authority for overflow and multi-level rewards.
 
-Combat statistics persist in the version 4 save envelope: total damage dealt, total damage received, enemies defeated, critical hits, attacks performed, and EXP earned in combat. Damage totals count actual HP removed, capped at the target's remaining HP. Temporary enemy identity, combat state, and timer deadlines are not saved.
+Persistent combat statistics include damage dealt/received, enemies defeated, critical hits, attacks, EXP, Elite defeats, Boss defeats, and World Boss defeats. Defeat rewards are guarded per enemy instance so repeated callbacks cannot award EXP, statistics, or loot twice.
 
-## Save migration
+## Save compatibility
 
-Version 4 adds `character.current_hp` and top-level `combat_statistics`. Version 3, version 2, version 1, and raw legacy saves default missing HP to full health and missing statistics to zero. Existing saves are only rewritten when the user explicitly saves. No active encounter is restored on load.
+Save schema 5 keeps enemy definitions and all encounter state out of character files. It adds three long-term counters to the existing combat statistics object: Elite, Boss, and World Boss defeats. A version 4 save keeps its current HP and previous combat totals, while the new counters default to zero. Version 3, version 2, version 1, and raw legacy saves retain the earlier defaults. Loading never resumes an enemy, ability cooldown, boss phase timer, or callback; the next session begins safely at `IDLE` unless saved player HP is zero.
 
-## Scope
-
-This update includes ordinary physical attacks only. It does not include bosses, enemy phases, abilities, equipment, loot, Gold, automated player attacks, idle or offline combat, or magical attacks.
+The generic `SaveManager` continues serializing `GameState.to_dict()` and requires no enemy-specific serialization path.

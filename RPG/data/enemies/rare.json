@@ -1,0 +1,25 @@
+{
+  "enemies": [
+    {
+      "enemy_id": "ogre", "name": "Ogre", "classification": "rare",
+      "description": "A hulking brute that turns fallen trees into weapons.",
+      "max_hp": 4200, "attack": 180, "physical_defense": 120, "magical_defense": 40,
+      "exp_reward": 1500, "attack_interval": 2.7, "abilities": ["heavy_strike", "regeneration"], "loot_table_id": "rare_drop",
+      "scaling": { "enabled": true, "base_level": 1, "max_hp_per_level": 0.05, "attack_per_level": 0.035, "physical_defense_per_level": 0.025, "exp_per_level": 0.025 }
+    },
+    {
+      "enemy_id": "dark_knight", "name": "Dark Knight", "classification": "rare",
+      "description": "A fallen guardian clad in blackened plate.",
+      "max_hp": 5000, "attack": 210, "physical_defense": 190, "magical_defense": 110,
+      "exp_reward": 1900, "attack_interval": 2.2, "abilities": ["defensive_stance", "piercing_strike"], "loot_table_id": "rare_drop",
+      "scaling": { "enabled": true, "base_level": 1, "max_hp_per_level": 0.05, "attack_per_level": 0.035, "physical_defense_per_level": 0.025, "magical_defense_per_level": 0.02, "exp_per_level": 0.025 }
+    },
+    {
+      "enemy_id": "wraith", "name": "Wraith", "classification": "rare",
+      "description": "A restless spirit that slips through the edges of torchlight.",
+      "max_hp": 3800, "attack": 240, "physical_defense": 95, "magical_defense": 210,
+      "exp_reward": 2100, "attack_interval": 1.8, "abilities": ["piercing_strike", "regeneration"], "loot_table_id": "rare_drop",
+      "scaling": { "enabled": true, "base_level": 1, "max_hp_per_level": 0.05, "attack_per_level": 0.035, "physical_defense_per_level": 0.02, "magical_defense_per_level": 0.025, "exp_per_level": 0.025 }
+    }
+  ]
+}

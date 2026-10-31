@@ -1,0 +1,32 @@
+{
+  "enemies": [
+    {
+      "enemy_id": "goblin_warrior", "name": "Goblin Warrior", "classification": "uncommon",
+      "description": "A trained goblin fighter who guards its clan's hunting grounds.",
+      "max_hp": 850, "attack": 55, "physical_defense": 36, "magical_defense": 8,
+      "exp_reward": 260, "attack_interval": 1.8, "abilities": ["heavy_strike"], "loot_table_id": "uncommon_drop",
+      "scaling": { "enabled": true, "base_level": 1, "max_hp_per_level": 0.04, "attack_per_level": 0.03, "physical_defense_per_level": 0.02, "exp_per_level": 0.02 }
+    },
+    {
+      "enemy_id": "dire_wolf", "name": "Dire Wolf", "classification": "uncommon",
+      "description": "A scarred pack hunter whose jaws can break shield lines.",
+      "max_hp": 1100, "attack": 72, "physical_defense": 42, "magical_defense": 12,
+      "exp_reward": 340, "attack_interval": 1.45, "abilities": ["heavy_strike"], "loot_table_id": "uncommon_drop",
+      "scaling": { "enabled": true, "base_level": 1, "max_hp_per_level": 0.04, "attack_per_level": 0.03, "physical_defense_per_level": 0.02, "exp_per_level": 0.02 }
+    },
+    {
+      "enemy_id": "skeleton_knight", "name": "Skeleton Knight", "classification": "uncommon",
+      "description": "An armored remnant still bound to an ancient oath.",
+      "max_hp": 1450, "attack": 78, "physical_defense": 78, "magical_defense": 28,
+      "exp_reward": 420, "attack_interval": 2.1, "abilities": ["defensive_stance"], "loot_table_id": "uncommon_drop",
+      "scaling": { "enabled": true, "base_level": 1, "max_hp_per_level": 0.04, "attack_per_level": 0.03, "physical_defense_per_level": 0.02, "magical_defense_per_level": 0.02, "exp_per_level": 0.02 }
+    },
+    {
+      "enemy_id": "orc_berserker", "name": "Orc Berserker", "classification": "uncommon",
+      "description": "A furious raider who grows more dangerous after a wound.",
+      "max_hp": 1800, "attack": 98, "physical_defense": 56, "magical_defense": 10,
+      "exp_reward": 500, "attack_interval": 2.0, "abilities": ["enrage"], "loot_table_id": "uncommon_drop",
+      "scaling": { "enabled": true, "base_level": 1, "max_hp_per_level": 0.04, "attack_per_level": 0.03, "physical_defense_per_level": 0.02, "exp_per_level": 0.02 }
+    }
+  ]
+}

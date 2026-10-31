@@ -1,0 +1,51 @@
+{
+  "abilities": [
+    {
+      "ability_id": "heavy_strike",
+      "name": "Heavy Strike",
+      "description": "Deals increased physical damage on an enemy attack.",
+      "ability_type": "heavy_strike",
+      "trigger": "enemy_attack",
+      "cooldown_seconds": 6,
+      "parameters": { "damage_multiplier": 1.7 }
+    },
+    {
+      "ability_id": "enrage",
+      "name": "Enrage",
+      "description": "At low health, increases Attack until the encounter ends.",
+      "ability_type": "enrage",
+      "trigger": "hp_threshold",
+      "activation_threshold": 0.5,
+      "parameters": { "attack_multiplier": 1.5 }
+    },
+    {
+      "ability_id": "defensive_stance",
+      "name": "Defensive Stance",
+      "description": "Raises Physical Defense for a short time.",
+      "ability_type": "defensive_stance",
+      "trigger": "enemy_attack",
+      "cooldown_seconds": 12,
+      "duration_seconds": 5,
+      "parameters": { "physical_defense_multiplier": 1.8 }
+    },
+    {
+      "ability_id": "regeneration",
+      "name": "Regeneration",
+      "description": "Restores a portion of maximum HP when wounded.",
+      "ability_type": "regeneration",
+      "trigger": "enemy_attack",
+      "cooldown_seconds": 14,
+      "activation_threshold": 0.65,
+      "parameters": { "heal_fraction": 0.08 }
+    },
+    {
+      "ability_id": "piercing_strike",
+      "name": "Piercing Strike",
+      "description": "A physical attack that uses only part of the target's Physical Defense.",
+      "ability_type": "piercing_strike",
+      "trigger": "enemy_attack",
+      "cooldown_seconds": 8,
+      "parameters": { "damage_multiplier": 1.2, "defense_effectiveness": 0.5 }
+    }
+  ]
+}

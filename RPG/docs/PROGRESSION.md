@@ -80,6 +80,6 @@ Unlocks are granted automatically whenever progression changes the level. Only a
 
 ## Save migration
 
-Save schema version 4 retains the version 3 progression inputs, including EXP, `class_id`, `unlocked_titles`, `equipped_title`, and the race's `bonus_profile`. It adds current HP and persistent combat statistics. Derived attributes and the current level's EXP requirement are not serialized; they are recalculated from the saved level, stats, race, and class.
+Save schema version 5 retains the version 4 character and combat fields, including current HP and persistent combat statistics. It adds Elite, Boss, and World Boss defeat counters to those statistics. Version 4, version 3, version 2, version 1, and raw saves continue to load with sensible defaults. Derived attributes and the current level's EXP requirement are not serialized; they are recalculated from the saved level, stats, race, and class.
 
 Version 3 and version 2 saves use the existing `character` envelope; version 1 saves use `player`; raw Player JSON is also accepted. Older saves default to full current HP, zero combat statistics, no class, the starting Novice title, and the race's default profile. Their old stored EXP threshold is ignored and recalculated. Loading performs this migration in memory; the source file changes only when the user explicitly saves and confirms overwriting it.

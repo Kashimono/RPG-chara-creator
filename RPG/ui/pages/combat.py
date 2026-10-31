@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import time
 from collections.abc import Callable
+from tkinter import messagebox
 
 import customtkinter as ctk
 
@@ -11,6 +12,7 @@ from ...config import ACCENT_COLOR, SECONDARY_TEXT, SURFACE_COLOR, TEXT_COLOR
 from ...core.game_state import GameState
 from ...systems.combat import combat_config
 from ...systems.combat.combat_manager import CombatActionError, CombatEvent, CombatManager, CombatState
+from ...systems.combat.enemy import EnemyClassification
 
 
 class CombatPage(ctk.CTkFrame):
@@ -30,6 +32,9 @@ class CombatPage(ctk.CTkFrame):
         self._timer_after_id: str | None = None
         self._closed = False
         self._feedback: list[str] = []
+        self._selected_classification = EnemyClassification.COMMON
+        self._selected_definition_id = self.manager.get_by_classification(self._selected_classification)[0].definition_id
+        self._enemy_option_to_id: dict[str, str] = {}
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
@@ -41,7 +46,7 @@ class CombatPage(ctk.CTkFrame):
         ).grid(row=0, column=0, sticky="w")
         ctk.CTkLabel(
             header,
-            text="Face ordinary enemies, strike at your own pace, and earn character EXP.",
+            text="Browse six enemy ranks, challenge optional elites and bosses, and earn EXP and structured drops.",
             anchor="w", font=ctk.CTkFont(size=12), text_color=SECONDARY_TEXT,
         ).grid(row=1, column=0, sticky="w", pady=(2, 0))
 
@@ -86,37 +91,66 @@ class CombatPage(ctk.CTkFrame):
             anchor="w", justify="left", wraplength=650, font=ctk.CTkFont(size=12), text_color=TEXT_COLOR,
         )
         self.enemy_details_label.grid(row=5, column=0, sticky="ew", padx=20, pady=(0, 14))
+        self.enemy_abilities_label = ctk.CTkLabel(
+            self.enemy_panel, text="Abilities: None", anchor="w", justify="left", wraplength=650,
+            font=ctk.CTkFont(size=12), text_color=TEXT_COLOR,
+        )
+        self.enemy_abilities_label.grid(row=6, column=0, sticky="ew", padx=20, pady=(0, 5))
+        self.enemy_phase_label = ctk.CTkLabel(
+            self.enemy_panel, text="", anchor="w", justify="left", wraplength=650,
+            font=ctk.CTkFont(size=12, weight="bold"), text_color="#ef6868",
+        )
+        self.enemy_phase_label.grid(row=7, column=0, sticky="ew", padx=20, pady=(0, 12))
 
         selector = ctk.CTkFrame(self.enemy_panel, fg_color="transparent")
-        selector.grid(row=6, column=0, sticky="ew", padx=16, pady=(0, 16))
+        selector.grid(row=8, column=0, sticky="ew", padx=16, pady=(0, 16))
         selector.grid_columnconfigure(0, weight=1)
+        selector.grid_columnconfigure(1, weight=1)
+        self.classification_menu = ctk.CTkOptionMenu(
+            selector,
+            values=[classification.display_name for classification in EnemyClassification],
+            command=self._on_classification_selected,
+            width=135,
+        )
+        self.classification_menu.grid(row=0, column=0, sticky="ew", padx=4, pady=(0, 8))
+        self.classification_menu.set(self._selected_classification.display_name)
         self.enemy_menu = ctk.CTkOptionMenu(
             selector,
-            values=[definition.name for definition in self.manager.available_enemies],
+            values=[],
             command=self._on_enemy_selected,
-            width=150,
+            width=175,
         )
-        self.enemy_menu.grid(row=0, column=0, sticky="w", padx=4)
-        self.enemy_menu.set(self.manager.available_enemies[0].name)
+        self.enemy_menu.grid(row=0, column=1, sticky="ew", padx=4, pady=(0, 8))
+        self._refresh_enemy_menu()
         self.start_button = ctk.CTkButton(
-            selector, text="Start Combat", height=38, corner_radius=11,
+            selector, text="Start Encounter", height=38, corner_radius=11,
             fg_color=ACCENT_COLOR, hover_color="#7b98ff", command=self._start_combat,
         )
-        self.start_button.grid(row=0, column=1, sticky="e", padx=4)
+        self.start_button.grid(row=1, column=0, sticky="ew", padx=4)
+        self.elite_button = ctk.CTkButton(
+            selector, text="Start Elite", height=38, corner_radius=11,
+            fg_color="#76539a", hover_color="#9169ba", command=self._start_elite,
+        )
+        self.elite_button.grid(row=1, column=1, sticky="ew", padx=4)
+        self.challenge_button = ctk.CTkButton(
+            selector, text="Challenge Boss", height=38, corner_radius=11,
+            fg_color="#934b4b", hover_color="#b45a5a", command=self._challenge_boss,
+        )
+        self.challenge_button.grid(row=2, column=0, sticky="ew", padx=4, pady=(8, 0))
         self.attack_button = ctk.CTkButton(
             selector, text="Attack", height=38, corner_radius=11, command=self._attack,
         )
-        self.attack_button.grid(row=0, column=2, sticky="e", padx=4)
+        self.attack_button.grid(row=2, column=1, sticky="ew", padx=4, pady=(8, 0))
         self.retreat_button = ctk.CTkButton(
             selector, text="Retreat", height=38, corner_radius=11,
             fg_color="#555d69", hover_color="#6a7380", command=self._retreat,
         )
-        self.retreat_button.grid(row=0, column=3, sticky="e", padx=4)
+        self.retreat_button.grid(row=3, column=0, sticky="ew", padx=4, pady=(8, 0))
         self.recover_button = ctk.CTkButton(
             selector, text="Recover", height=38, corner_radius=11,
             fg_color="#45845a", hover_color="#55a36e", command=self._recover,
         )
-        self.recover_button.grid(row=1, column=1, sticky="e", padx=4, pady=(8, 0))
+        self.recover_button.grid(row=3, column=1, sticky="ew", padx=4, pady=(8, 0))
         self.recover_button.grid_remove()
 
     def _build_player_panel(self) -> None:
@@ -179,6 +213,9 @@ class CombatPage(ctk.CTkFrame):
             ("total_critical_hits", "Critical hits"),
             ("total_attacks_performed", "Attacks performed"),
             ("total_exp_earned", "Combat EXP earned"),
+            ("total_elites_defeated", "Elites defeated"),
+            ("total_bosses_defeated", "Bosses defeated"),
+            ("total_world_bosses_defeated", "World Bosses defeated"),
         )
         for index, (key, label) in enumerate(entries):
             row, column = divmod(index, 3)
@@ -189,20 +226,73 @@ class CombatPage(ctk.CTkFrame):
             value.grid(row=row + 1, column=column, sticky="ew", padx=16, pady=(4, 13 if row == 1 else 4))
             self.stat_labels[key] = value
 
-    def _on_enemy_selected(self, _name: str) -> None:
+    def _refresh_enemy_menu(self) -> None:
+        definitions = self.manager.get_by_classification(self._selected_classification)
+        self._enemy_option_to_id = {
+            f"{definition.name} ({definition.definition_id})": definition.definition_id
+            for definition in definitions
+        }
+        names = list(self._enemy_option_to_id)
+        self.enemy_menu.configure(values=names)
+        if names:
+            self.enemy_menu.set(names[0])
+            self._selected_definition_id = self._enemy_option_to_id[names[0]]
+
+    def _on_classification_selected(self, display_name: str) -> None:
+        self._selected_classification = next(
+            classification for classification in EnemyClassification
+            if classification.display_name == display_name
+        )
+        self._refresh_enemy_menu()
+        self.refresh()
+
+    def _on_enemy_selected(self, name: str) -> None:
+        self._selected_definition_id = self._enemy_option_to_id.get(name, self._selected_definition_id)
         self.refresh()
 
     def _selected_enemy_id(self) -> str:
-        selected_name = self.enemy_menu.get()
-        return next(
-            definition.definition_id
-            for definition in self.manager.available_enemies
-            if definition.name == selected_name
-        )
+        return self._selected_definition_id
 
     def _start_combat(self) -> None:
         try:
-            self._handle_event(self.manager.start_combat(self._selected_enemy_id()))
+            event = self.manager.start_classification_encounter(
+                self._selected_classification, self._selected_enemy_id(),
+            )
+            self._handle_event(event)
+        except CombatActionError as exc:
+            self._show_message(str(exc), "#e7bd65")
+            self.refresh()
+            return
+        self.refresh()
+
+    def _start_elite(self) -> None:
+        if self._selected_classification is not EnemyClassification.ELITE:
+            self._on_classification_selected(EnemyClassification.ELITE.display_name)
+        try:
+            self._handle_event(self.manager.start_elite_encounter(self._selected_enemy_id()))
+        except CombatActionError as exc:
+            self._show_message(str(exc), "#e7bd65")
+            self.refresh()
+            return
+        self.refresh()
+
+    def _challenge_boss(self) -> None:
+        if self._selected_classification not in {EnemyClassification.BOSS, EnemyClassification.WORLD_BOSS}:
+            target = EnemyClassification.BOSS if self.manager.get_by_classification(EnemyClassification.BOSS) else EnemyClassification.WORLD_BOSS
+            self._on_classification_selected(target.display_name)
+        definition = next(
+            item for item in self.manager.available_enemies
+            if item.definition_id == self._selected_enemy_id()
+        )
+        confirmed = messagebox.askyesno(
+            "Challenge Boss",
+            f"Challenge {definition.name}? This will begin a dedicated boss encounter.",
+            parent=self.winfo_toplevel(),
+        )
+        if not confirmed:
+            return
+        try:
+            self._handle_event(self.manager.challenge_boss(definition.definition_id))
         except CombatActionError as exc:
             self._show_message(str(exc), "#e7bd65")
             self.refresh()
@@ -219,7 +309,7 @@ class CombatPage(ctk.CTkFrame):
         self._handle_event(event)
         if event.kind != "cooldown":
             self.on_dirty()
-            if event.kind == "enemy_defeated":
+            if event.kind in {"enemy_defeated", "elite_defeated", "boss_defeated", "world_boss_defeated"}:
                 self.on_change()
             else:
                 self.refresh()
@@ -250,9 +340,15 @@ class CombatPage(ctk.CTkFrame):
             "enemy_hit": "#e27b59",
             "player_defeated": "#e45c5c",
             "enemy_defeated": "#76d28d",
+            "elite_defeated": "#b783ff",
+            "boss_defeated": "#ef6868",
+            "world_boss_defeated": "#e9bd55",
+            "elite_encounter_started": "#b783ff",
             "recovered": "#76d28d",
         }.get(event.kind, TEXT_COLOR)
         self._show_message(event.message, color)
+        for notification in event.notifications:
+            self._show_message(notification, "#e9bd55" if "enters" in notification else "#c09bea")
 
     def _show_message(self, message: str, color: str) -> None:
         self.feedback_label.configure(text=message, text_color=color)
@@ -276,15 +372,33 @@ class CombatPage(ctk.CTkFrame):
         attributes = player.calculated_attributes
         enemy = self.manager.current_enemy
         if enemy is None:
-            self.enemy_name_label.configure(text="No enemy active")
-            self.enemy_description_label.configure(text="Start combat to face an ordinary enemy.")
-            self.enemy_hp_label.configure(text="HP: - / -")
-            self.enemy_hp_bar.set(0)
-            self.enemy_details_label.configure(
-                text="Classification: -   |   Attack: -   |   Physical Defense: -   |   Magical Defense: -   |   Interval: -   |   EXP: -"
+            definition = self.manager.enemy_database.get_by_id(self._selected_enemy_id())
+            boss_title = definition.classification in {EnemyClassification.BOSS, EnemyClassification.WORLD_BOSS}
+            self.enemy_name_label.configure(
+                text=definition.name,
+                text_color=definition.classification.color_hex,
+                font=ctk.CTkFont(size=29 if boss_title else 25, weight="bold"),
             )
+            self.enemy_hp_bar.configure(progress_color=definition.classification.color_hex)
+            self.enemy_description_label.configure(text=definition.description)
+            self.enemy_hp_label.configure(text=f"Maximum HP: {definition.max_hp:,.1f}")
+            self.enemy_hp_bar.set(0)
+            self.enemy_details_label.configure(text=(
+                f"{definition.classification.display_name}   |   Attack: {definition.attack:,.1f}   |   "
+                f"Physical Defense: {definition.physical_defense:,.1f}   |   Magical Defense: {definition.magical_defense:,.1f}   |   "
+                f"Interval: {definition.attack_interval:.2f}s   |   EXP: {definition.exp_reward:,}"
+            ))
+            abilities = ", ".join(ability.name for ability in definition.abilities) or "None"
+            self.enemy_abilities_label.configure(text=f"Abilities: {abilities}")
+            self.enemy_phase_label.configure(text="Boss phases: " + " → ".join(phase.name for phase in definition.boss_phases) if definition.boss_phases else "")
         else:
-            self.enemy_name_label.configure(text=enemy.name)
+            boss_title = enemy.classification in {EnemyClassification.BOSS, EnemyClassification.WORLD_BOSS}
+            self.enemy_name_label.configure(
+                text=enemy.name,
+                text_color=enemy.classification.color_hex,
+                font=ctk.CTkFont(size=29 if boss_title else 25, weight="bold"),
+            )
+            self.enemy_hp_bar.configure(progress_color=enemy.classification.color_hex)
             self.enemy_description_label.configure(text=enemy.description)
             self.enemy_hp_label.configure(
                 text=f"HP: {enemy.current_hp:,.1f} / {enemy.max_hp:,.1f} ({enemy.hp_ratio:.0%})"
@@ -292,10 +406,18 @@ class CombatPage(ctk.CTkFrame):
             self.enemy_hp_bar.set(enemy.hp_ratio)
             self.enemy_details_label.configure(
                 text=(
-                    f"Classification: {enemy.classification}   |   Attack: {enemy.attack:,.1f}   |   "
+                    f"{enemy.classification.display_name} Lv.{enemy.level}   |   Attack: {enemy.attack:,.1f}   |   "
                     f"Physical Defense: {enemy.physical_defense:,.1f}   |   Magical Defense: {enemy.magical_defense:,.1f}   |   "
                     f"Interval: {enemy.attack_interval:.2f}s   |   EXP: {enemy.exp_reward:,}"
                 )
+            )
+            ability_names = ", ".join(ability.name for ability in enemy.available_abilities) or "None"
+            active_names = ", ".join(self.manager.active_ability_names) or "None"
+            self.enemy_abilities_label.configure(text=f"Abilities: {ability_names}   |   Active effects: {active_names}")
+            phase = enemy.boss_phase
+            self.enemy_phase_label.configure(
+                text=f"Current Phase: {phase.name} — {phase.description}" if phase else "",
+                text_color=enemy.classification.color_hex,
             )
 
         maximum_hp = player.maximum_hp
@@ -325,6 +447,9 @@ class CombatPage(ctk.CTkFrame):
             "total_critical_hits": f"{stats.total_critical_hits:,}",
             "total_attacks_performed": f"{stats.total_attacks_performed:,}",
             "total_exp_earned": f"{stats.total_exp_earned:,}",
+            "total_elites_defeated": f"{stats.total_elites_defeated:,}",
+            "total_bosses_defeated": f"{stats.total_bosses_defeated:,}",
+            "total_world_bosses_defeated": f"{stats.total_world_bosses_defeated:,}",
         }
         labels = {
             "total_damage_dealt": "Damage dealt",
@@ -333,19 +458,37 @@ class CombatPage(ctk.CTkFrame):
             "total_critical_hits": "Critical hits",
             "total_attacks_performed": "Attacks performed",
             "total_exp_earned": "Combat EXP earned",
+            "total_elites_defeated": "Elites defeated",
+            "total_bosses_defeated": "Bosses defeated",
+            "total_world_bosses_defeated": "World Bosses defeated",
         }
         for key, value in stat_values.items():
             self.stat_labels[key].configure(text=f"{labels[key]}: {value}")
 
         state = self.manager.state
         ready_character = player.character_created and maximum_hp > 0 and attributes.attack > 0
-        self.start_button.configure(state="normal" if state is CombatState.IDLE and ready_character else "disabled")
+        idle_ready = state is CombatState.IDLE and ready_character
+        self.start_button.configure(
+            state="normal" if idle_ready and self._selected_classification in {
+                EnemyClassification.COMMON, EnemyClassification.UNCOMMON, EnemyClassification.RARE,
+            } else "disabled"
+        )
+        self.elite_button.configure(
+            state="normal" if idle_ready and self._selected_classification is EnemyClassification.ELITE else "disabled"
+        )
+        self.challenge_button.configure(
+            state="normal" if idle_ready and self._selected_classification in {
+                EnemyClassification.BOSS, EnemyClassification.WORLD_BOSS,
+            } else "disabled"
+        )
+        self.classification_menu.configure(state="normal" if state is CombatState.IDLE else "disabled")
         self.enemy_menu.configure(state="normal" if state is CombatState.IDLE else "disabled")
         can_attack = state is CombatState.ACTIVE and self.manager.attack_cooldown_remaining() <= 0
         self.attack_button.configure(state="normal" if can_attack else "disabled")
         self.retreat_button.configure(
             state="normal" if state in {CombatState.ACTIVE, CombatState.ENEMY_DEFEATED} else "disabled"
         )
+        self.recover_button.configure(state="normal" if state is CombatState.PLAYER_DEFEATED else "disabled")
         if state is CombatState.PLAYER_DEFEATED:
             self.recover_button.grid()
         else:

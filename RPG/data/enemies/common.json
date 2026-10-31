@@ -1,0 +1,39 @@
+{
+  "enemies": [
+    {
+      "enemy_id": "slime", "name": "Slime", "classification": "common",
+      "description": "A small, quivering creature found near quiet roads.",
+      "max_hp": 100, "attack": 5, "physical_defense": 0, "magical_defense": 0,
+      "exp_reward": 10, "attack_interval": 2.0, "abilities": [], "loot_table_id": "common_drop",
+      "scaling": { "enabled": false, "base_level": 1, "max_hp_per_level": 0.03, "attack_per_level": 0.02, "exp_per_level": 0.01 }
+    },
+    {
+      "enemy_id": "goblin", "name": "Goblin", "classification": "common",
+      "description": "A quick raider armed with crude tools.",
+      "max_hp": 250, "attack": 12, "physical_defense": 5, "magical_defense": 0,
+      "exp_reward": 25, "attack_interval": 1.8, "abilities": [], "loot_table_id": "common_drop",
+      "scaling": { "enabled": false, "base_level": 1, "max_hp_per_level": 0.03, "attack_per_level": 0.02, "physical_defense_per_level": 0.01, "exp_per_level": 0.01 }
+    },
+    {
+      "enemy_id": "wolf", "name": "Wolf", "classification": "common",
+      "description": "A hungry forest hunter that strikes quickly.",
+      "max_hp": 400, "attack": 18, "physical_defense": 8, "magical_defense": 0,
+      "exp_reward": 40, "attack_interval": 1.5, "abilities": [], "loot_table_id": "common_drop",
+      "scaling": { "enabled": false, "base_level": 1, "max_hp_per_level": 0.03, "attack_per_level": 0.02, "physical_defense_per_level": 0.01, "exp_per_level": 0.01 }
+    },
+    {
+      "enemy_id": "skeleton", "name": "Skeleton", "classification": "common",
+      "description": "An animated skeleton held together by old magic.",
+      "max_hp": 750, "attack": 30, "physical_defense": 15, "magical_defense": 8,
+      "exp_reward": 75, "attack_interval": 2.0, "abilities": [], "loot_table_id": "common_drop",
+      "scaling": { "enabled": false, "base_level": 1, "max_hp_per_level": 0.03, "attack_per_level": 0.02, "physical_defense_per_level": 0.01, "magical_defense_per_level": 0.01, "exp_per_level": 0.01 }
+    },
+    {
+      "enemy_id": "orc", "name": "Orc", "classification": "common",
+      "description": "A broad-shouldered warrior with a heavy swing.",
+      "max_hp": 1500, "attack": 50, "physical_defense": 30, "magical_defense": 0,
+      "exp_reward": 150, "attack_interval": 2.5, "abilities": [], "loot_table_id": "common_drop",
+      "scaling": { "enabled": false, "base_level": 1, "max_hp_per_level": 0.03, "attack_per_level": 0.02, "physical_defense_per_level": 0.01, "exp_per_level": 0.01 }
+    }
+  ]
+}

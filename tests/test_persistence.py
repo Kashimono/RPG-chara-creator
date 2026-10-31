@@ -139,7 +139,7 @@ def test_version_three_save_defaults_hp_and_combat_statistics(saves_dir) -> None
     assert json.loads(path.read_text(encoding="utf-8")) == original
 
 
-def test_version_four_save_persists_current_hp_and_combat_statistics(saves_dir) -> None:
+def test_current_save_persists_current_hp_and_combat_statistics(saves_dir) -> None:
     state = GameState()
     state.player.character_created = True
     state.player.stats["HP"].current = 100
@@ -158,6 +158,37 @@ def test_version_four_save_persists_current_hp_and_combat_statistics(saves_dir) 
     assert restored.combat_statistics.total_critical_hits == 1
     assert restored.combat_statistics.total_attacks_performed == 1
     assert restored.combat_statistics.total_exp_earned == 25
+    assert restored.combat_statistics.total_elites_defeated == 0
+    assert restored.combat_statistics.total_bosses_defeated == 0
+    assert restored.combat_statistics.total_world_bosses_defeated == 0
+
+
+def test_version_four_save_migrates_with_new_encounter_counters_defaulted(saves_dir):
+    state = GameState()
+    old_save = state.to_dict()
+    old_save["save_version"] = 4
+    old_save["combat_statistics"].update({
+        "total_damage_dealt": 12.0,
+        "total_enemies_defeated": 2,
+        "total_exp_earned": 40,
+    })
+    old_save["combat_statistics"].pop("total_elites_defeated")
+    old_save["combat_statistics"].pop("total_bosses_defeated")
+    old_save["combat_statistics"].pop("total_world_bosses_defeated")
+    saves_dir.mkdir(parents=True)
+    path = saves_dir / "version_four.json"
+    path.write_text(json.dumps(old_save), encoding="utf-8")
+
+    migrated = SaveManager.load("version_four.json")
+
+    assert migrated.loaded_from_legacy
+    assert migrated.combat_statistics.total_damage_dealt == 12.0
+    assert migrated.combat_statistics.total_enemies_defeated == 2
+    assert migrated.combat_statistics.total_exp_earned == 40
+    assert migrated.combat_statistics.total_elites_defeated == 0
+    assert migrated.combat_statistics.total_bosses_defeated == 0
+    assert migrated.combat_statistics.total_world_bosses_defeated == 0
+    assert json.loads(path.read_text(encoding="utf-8")) == old_save
 
 
 def test_raw_legacy_player_shape_is_accepted() -> None:

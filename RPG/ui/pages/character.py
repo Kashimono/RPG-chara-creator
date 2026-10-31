@@ -7,6 +7,7 @@ import customtkinter as ctk
 from ...config import SECONDARY_TEXT, TEXT_COLOR
 from ...core.player import Player
 from ..advanced_panel import AdvancedPanel
+from ..components.progression_panels import ClassSelectionPanel, RaceBonusPanel, TitlePanel
 from ..level_panel import LevelPanel
 from ..potential_panel import PotentialPanel
 from ..race_panel import RacePanel
@@ -33,27 +34,32 @@ class CharacterPage(ctk.CTkFrame):
         self.body.grid_columnconfigure(1, weight=1, uniform="character")
         player = window.game_state.character
 
-        left = ctk.CTkFrame(self.body, fg_color="transparent")
-        left.grid(row=0, column=0, sticky="nsew", padx=(0, 6))
-        left.grid_columnconfigure(0, weight=1)
-        self.race_panel = RacePanel(left, player, window.handle_game_change)
-        self.race_panel.grid(row=0, column=0, sticky="ew", pady=(0, 10))
-        self.potential_panel = PotentialPanel(left, player, window.handle_game_change)
-        self.potential_panel.grid(row=1, column=0, sticky="ew")
+        self.level_panel = LevelPanel(self.body, player, window.handle_game_change)
+        self.level_panel.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 10))
 
-        right = ctk.CTkFrame(self.body, fg_color="transparent")
-        right.grid(row=0, column=1, sticky="nsew", padx=(6, 0))
-        right.grid_columnconfigure(0, weight=1)
-        right.grid_rowconfigure(1, weight=1)
-        self.level_panel = LevelPanel(right, player, window.handle_game_change)
-        self.level_panel.grid(row=0, column=0, sticky="ew", pady=(0, 10))
-        self.stat_panel = StatPanel(right, player, window.handle_game_change)
-        self.stat_panel.grid(row=1, column=0, sticky="nsew")
-        self.advanced_panel = AdvancedPanel(right, player, window.refresh_views)
-        self.advanced_panel.grid(row=2, column=0, sticky="ew", pady=(10, 0))
+        self.race_panel = RacePanel(self.body, player, window.handle_game_change)
+        self.race_panel.grid(row=1, column=0, sticky="nsew", padx=(0, 6), pady=(0, 10))
+        self.class_panel = ClassSelectionPanel(self.body, window.handle_game_change)
+        self.class_panel.grid(row=1, column=1, sticky="nsew", padx=(6, 0), pady=(0, 10))
+
+        self.potential_panel = PotentialPanel(self.body, player, window.handle_game_change)
+        self.potential_panel.grid(row=2, column=0, sticky="nsew", padx=(0, 6), pady=(0, 10))
+        self.race_bonus_panel = RaceBonusPanel(self.body)
+        self.race_bonus_panel.grid(row=2, column=1, sticky="new", padx=(6, 0), pady=(0, 10))
+
+        self.stat_panel = StatPanel(self.body, player, window.handle_game_change)
+        self.stat_panel.grid(row=3, column=0, sticky="nsew", padx=(0, 6), pady=(0, 10))
+        self.advanced_panel = AdvancedPanel(self.body, player, window.refresh_views)
+        self.advanced_panel.grid(row=3, column=1, sticky="new", padx=(6, 0), pady=(0, 10))
+
+        self.title_panel = TitlePanel(self.body, window.handle_game_change)
+        self.title_panel.grid(row=4, column=0, columnspan=2, sticky="ew")
 
     def refresh(self) -> None:
         player: Player = self.window.game_state.character
         for panel in (self.race_panel, self.potential_panel, self.level_panel, self.stat_panel, self.advanced_panel):
             panel.player = player
             panel.refresh()
+        self.class_panel.refresh(player)
+        self.race_bonus_panel.refresh(player)
+        self.title_panel.refresh(player)

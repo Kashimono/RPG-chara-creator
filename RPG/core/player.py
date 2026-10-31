@@ -4,6 +4,13 @@ from .potential import PotentialRoller
 from .leveling import LevelSystem
 from .race import Race, RaceManager, Rarity
 from .race_pity import RacePityManager
+from .progression_config import (
+    TITLE_DEFINITIONS,
+    CharacterClassDefinition,
+    get_class_definition,
+    get_title_definition,
+)
+from .stat_calculator import AttributeSheet, calculate_attributes
 from ..constants import STAT_NAMES
 
 
@@ -14,9 +21,12 @@ class Player:
         self.character_name = "Adventurer"
         self.level = 0
         self.exp = LevelSystem.starting_exp()
-        self.exp_to_next = LevelSystem.next_level_exp()
+        self.exp_to_next = LevelSystem.next_level_exp(self.level)
         self.stat_points = 0
         self.character_created = False
+        self.class_id: Optional[str] = None
+        self.unlocked_titles = ["novice"]
+        self.equipped_title = "novice"
         self.stats: Dict[str, Stat] = {name: Stat(name) for name in STAT_NAMES}
         self.race: Optional[Race] = None
         self.race_accepted = False
@@ -32,9 +42,12 @@ class Player:
         self.character_name = "Adventurer"
         self.level = 0
         self.exp = LevelSystem.starting_exp()
-        self.exp_to_next = LevelSystem.next_level_exp()
+        self.exp_to_next = LevelSystem.next_level_exp(self.level)
         self.stat_points = 0
         self.character_created = False
+        self.class_id = None
+        self.unlocked_titles = ["novice"]
+        self.equipped_title = "novice"
         self.stats = {name: Stat(name) for name in STAT_NAMES}
         self.race = None
         self.race_accepted = False
@@ -94,9 +107,10 @@ class Player:
     def _initialize_character(self) -> None:
         self.level = LevelSystem.starting_level()
         self.exp = LevelSystem.starting_exp()
-        self.exp_to_next = LevelSystem.next_level_exp()
+        self.exp_to_next = LevelSystem.next_level_exp(self.level)
         self.stat_points = 0
         self.character_created = True
+        self._unlock_titles_for_level()
 
     @property
     def all_potentials_accepted(self) -> bool:
@@ -116,8 +130,75 @@ class Player:
     def level_up(self, times: int = 1) -> None:
         if not self.character_created:
             return
+        if isinstance(times, bool) or not isinstance(times, int) or times <= 0:
+            raise ValueError("Level count must be a positive whole number.")
         self.level += times
         self.stat_points += LevelSystem.stat_points_for_levels(times)
+        self.exp_to_next = LevelSystem.required_exp(self.level)
+        self._unlock_titles_for_level()
+
+    def gain_exp(self, amount: int) -> int:
+        """Add EXP, return levels gained, and preserve any EXP overflow."""
+        if not self.character_created:
+            raise ValueError("Create a character before gaining EXP.")
+        if isinstance(amount, bool) or not isinstance(amount, int) or amount <= 0:
+            raise ValueError("EXP gain must be a positive whole number.")
+
+        self.exp += amount
+        levels_gained = 0
+        self.exp_to_next = LevelSystem.required_exp(self.level)
+        while self.exp >= self.exp_to_next:
+            self.exp -= self.exp_to_next
+            self.level += 1
+            self.stat_points += LevelSystem.stat_points_for_levels(1)
+            levels_gained += 1
+            self.exp_to_next = LevelSystem.required_exp(self.level)
+        if levels_gained:
+            self._unlock_titles_for_level()
+        return levels_gained
+
+    def select_class(self, class_id: str | None) -> None:
+        """Select a configured class, or clear the selection with ``None``."""
+        if class_id is None or not str(class_id).strip():
+            self.class_id = None
+            return
+        definition = get_class_definition(class_id)
+        if definition is None:
+            raise ValueError(f"Unknown character class: {class_id}")
+        requirements = definition.requirements
+        if self.level < requirements.minimum_level:
+            raise ValueError(f"{definition.name} requires level {requirements.minimum_level}.")
+        if requirements.requires_character_created and not self.character_created:
+            raise ValueError(f"{definition.name} requires a completed character.")
+        self.class_id = definition.class_id
+
+    def equip_title(self, title_id: str) -> None:
+        definition = get_title_definition(title_id)
+        normalized_id = definition.title_id if definition else str(title_id).strip().casefold()
+        if definition is None or normalized_id not in self.unlocked_titles:
+            raise ValueError("You can only equip a title that has been unlocked.")
+        self.equipped_title = normalized_id
+
+    def _unlock_titles_for_level(self) -> None:
+        unlocked = set(self.unlocked_titles)
+        for title in TITLE_DEFINITIONS.values():
+            if title.starting or self.level >= title.minimum_level:
+                unlocked.add(title.title_id)
+        self.unlocked_titles = [title_id for title_id in TITLE_DEFINITIONS if title_id in unlocked]
+
+    @property
+    def equipped_title_name(self) -> str:
+        title = get_title_definition(self.equipped_title)
+        return title.name if title else "Novice"
+
+    @property
+    def selected_class(self) -> CharacterClassDefinition | None:
+        return get_class_definition(self.class_id)
+
+    @property
+    def calculated_attributes(self) -> AttributeSheet:
+        active_race = self.race if self.race_accepted else None
+        return calculate_attributes(self.stats, active_race, self.class_id)
 
     def can_allocate(self, stat_name: str, amount: int = 1) -> bool:
         if amount <= 0:
@@ -156,9 +237,11 @@ class Player:
             "character_name": self.character_name,
             "level": self.level,
             "exp": self.exp,
-            "exp_to_next": self.exp_to_next,
             "stat_points": self.stat_points,
             "character_created": self.character_created,
+            "class_id": self.class_id,
+            "unlocked_titles": list(self.unlocked_titles),
+            "equipped_title": self.equipped_title,
             "race": self.race.to_dict() if self.race is not None else None,
             "race_accepted": self.race_accepted,
             "race_name": self.race_name,
@@ -174,9 +257,26 @@ class Player:
         self.character_name = data.get("character_name", self.character_name)
         self.level = data.get("level", self.level)
         self.exp = data.get("exp", self.exp)
-        self.exp_to_next = data.get("exp_to_next", self.exp_to_next)
+        # Old saves stored a fixed EXP threshold. Recalculate it from level.
+        self.exp_to_next = LevelSystem.required_exp(self.level)
         self.stat_points = data.get("stat_points", self.stat_points)
         self.character_created = data.get("character_created", self.character_created)
+        raw_class = data.get("class_id")
+        class_definition = get_class_definition(raw_class)
+        self.class_id = class_definition.class_id if class_definition else None
+        raw_titles = data.get("unlocked_titles", ["novice"])
+        if isinstance(raw_titles, (list, tuple, set)):
+            self.unlocked_titles = list(dict.fromkeys(
+                definition.title_id
+                for item in raw_titles
+                if (definition := get_title_definition(str(item))) is not None
+            ))
+        else:
+            self.unlocked_titles = ["novice"]
+        if "novice" not in self.unlocked_titles:
+            self.unlocked_titles.insert(0, "novice")
+        requested_title = get_title_definition(data.get("equipped_title", "novice"))
+        self.equipped_title = requested_title.title_id if requested_title else "novice"
         self.race_accepted = data.get("race_accepted", self.race_accepted)
         self.race_name = data.get("race_name", self.race_name)
         self.race_rarity = data.get("race_rarity", self.race_rarity)
@@ -200,6 +300,21 @@ class Player:
             if stat_name not in self.stats:
                 self.stats[stat_name] = Stat(stat_name)
         self._sync_stat_race_context()
+        self._unlock_titles_for_level()
+        if self.equipped_title not in self.unlocked_titles:
+            self.equipped_title = "novice"
+        if self.character_created:
+            self._apply_saved_exp_overflow()
+
+    def _apply_saved_exp_overflow(self) -> None:
+        self.exp = max(0, int(self.exp))
+        self.exp_to_next = LevelSystem.required_exp(self.level)
+        while self.exp >= self.exp_to_next:
+            self.exp -= self.exp_to_next
+            self.level += 1
+            self.stat_points += LevelSystem.stat_points_for_levels(1)
+            self.exp_to_next = LevelSystem.required_exp(self.level)
+        self._unlock_titles_for_level()
 
     def get_stat(self, stat_name: str) -> Stat:
         return self.stats[stat_name]

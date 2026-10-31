@@ -12,12 +12,14 @@ class AdvancedPanel(ctk.CTkFrame):
         self.title = section_label(self, "Advanced Stats")
         self.title.grid(row=0, column=0, sticky="w", padx=12, pady=(12, 6))
 
-        self.toggle_button = create_secondary_button(self, "Show advanced stats", self._toggle)
+        self.toggle_button = create_secondary_button(self, "Hide advanced stats", self._toggle)
         self.toggle_button.grid(row=0, column=1, padx=12, pady=(12, 6), sticky="e")
 
-        self.visible = False
-        self.details_label = section_label(self, "Hidden multipliers and effective values remain hidden until toggled.")
+        self.visible = True
+        self.details_label = section_label(self, "")
         self.details_label.grid(row=1, column=0, columnspan=2, sticky="w", padx=12, pady=(0, 12))
+        self.details_label.configure(justify="left", anchor="w")
+        self.refresh()
 
     def _toggle(self) -> None:
         self.visible = not self.visible
@@ -29,10 +31,26 @@ class AdvancedPanel(ctk.CTkFrame):
             self.details_label.configure(text="Hidden multipliers and effective values remain hidden until toggled.")
             return
 
-        lines = ["Stat       Multiplier   Maximum   Effective"]
-        lines.append("-------------------------------------------")
+        attributes = self.player.calculated_attributes
+        lines = ["PRIMARY ATTRIBUTES (calculated with accepted passives)"]
         for stat_name in self.player.stats:
             stat = self.player.get_stat(stat_name)
-            lines.append(f"{stat_name:<10}{stat.multiplier:>10.2f}x   {stat.max_multiplier:>7.0f}x   {stat.effective_value:>10.2f}")
+            calculated_value = getattr(attributes, stat_name.lower())
+            lines.append(
+                f"{stat_name:<10}Base {stat.current:>10,}  Stat x{stat.multiplier:.2f} "
+                f"(cap {stat.max_multiplier:.0f}x)  Final {calculated_value:,.2f}"
+            )
+        lines.extend(("", "ADVANCED ATTRIBUTES"))
+        lines.extend(
+            (
+                f"Physical Defense: {attributes.physical_defense:,.2f}",
+                f"Magical Defense: {attributes.magical_defense:,.2f}",
+                f"Critical Chance: {attributes.critical_chance:.2%}",
+                f"Critical Damage: {attributes.critical_damage:.2f}x",
+                f"Attack Speed: {attributes.attack_speed:.2f} attacks/sec",
+                f"HP Regeneration: {attributes.hp_regeneration:,.2f}/sec",
+                f"MP Regeneration: {attributes.mp_regeneration:,.2f}/sec",
+            )
+        )
 
         self.details_label.configure(text="\n".join(lines))

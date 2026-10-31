@@ -1,44 +1,44 @@
 # RPG: World of Ascension
 
-A dark fantasy desktop RPG character builder made with Python and CustomTkinter. This foundation update adds a persistent navigation shell, shared game state, versioned saves, and settings while preserving the existing character creation and stat progression rules.
+A dark fantasy character progression builder made with Python and CustomTkinter. The application has a persistent sidebar, a shared `GameState`, versioned JSON saves, and logic modules that do not depend on the UI.
 
-## Current features
+## Implemented features
 
-- Roll from seven race rarities, review drop rates and pity counters, and accept a race.
-- Roll up to ten potential values for each stat: HP, MP, Attack, Agility, and Stamina. Accept one value per stat to finish character creation.
-- Level up by 1, 10, or 1,000 levels. Each level grants 10 stat points.
-- Allocate stat points with a shared amount input or per-stat +1 shortcut, capped by remaining points and accepted potential.
-- View stat multipliers and effective values in Advanced Stats.
-- Copy character race, rarity, level, and current stat values to the clipboard.
-- Save, load, overwrite with confirmation, and delete JSON saves. Existing version 1 and raw character saves can be loaded and migrate only when explicitly saved.
-- Navigate between Dashboard, Character, Combat, Inventory, and Settings. Combat and Inventory are planned feature placeholders.
-- Choose Dark, Light, or System appearance and store a sound preference placeholder.
+- Roll a race from seven rarity tiers, review drop rates and pity counters, and accept the race.
+- Roll and accept stat potentials for HP, MP, Attack, Agility, and Stamina; allocate earned stat points within each accepted potential.
+- Gain EXP and automatically level up, including multiple levels and EXP overflow. Each level awards 10 stat points.
+- View an EXP progress bar and use clearly marked direct level/EXP controls for progression testing. No combat EXP reward source is implemented yet.
+- Apply race passive profiles and choose a class with passive bonuses. Race and class effects are calculated from base attributes and are not written back into them.
+- Unlock and equip cosmetic titles at level milestones.
+- View Physical Defense, Magical Defense, Critical Chance, Critical Damage, Attack Speed, HP Regeneration, and MP Regeneration.
+- Save and load characters with version 3 JSON. Version 2, version 1, and raw legacy saves receive defaults for the new fields and are only migrated on an explicit save.
+- Use Dashboard, Character, Combat, Inventory, and Settings navigation. Combat and Inventory remain planned placeholders.
+- Copy the existing character profile to the clipboard and choose an appearance preference.
 
-No combat, enemies, inventory items, equipment, idle systems, or sound playback is implemented in this foundation update.
+Progression formulas, initial race and class passives, advanced stat formulas, and title requirements are documented in [`RPG/docs/PROGRESSION.md`](RPG/docs/PROGRESSION.md).
+
+No combat, enemy damage, equipment, functional inventory, skills, idle progression, offline rewards, summoning, or ascension is implemented in this update.
 
 ## Project structure
 
 ```text
 RPG/
-  core/                 Character, race, stats, progression, and game state
-    character.py        Pure character profile formatting
-    game_config.py      Save schema and default preferences
-    game_state.py       Active character, settings, and save metadata
-    player.py           Existing character creation and stat rules
+  core/                 Character, race, stats, EXP, passives, and calculations
   managers/             Save and settings services
   ui/
     main_window.py      Application shell and shared actions
-    navigation.py       Persistent sidebar navigation
+    navigation.py       Persistent sidebar
+    components/         Reusable progression panels
     pages/              Dashboard, Character, Combat, Inventory, Settings
-    *_panel.py          Existing character builder panels
+    *_panel.py          Race, potential, level, allocation, and advanced stats
   saves/                JSON character saves
-  docs/                 Additional project notes
+  docs/                 Architecture and progression documentation
 tests/                  Logic and persistence tests
-requirements-dev.txt    Test tooling plus application requirements
+requirements-dev.txt    Test tooling plus app requirements
 run_rpg.bat             Windows launcher for an existing .venv
 ```
 
-Race definitions and balance constants remain in `RPG/core/race.py` and `RPG/constants.py`; there is no separate data directory because the current race database is code-defined.
+Race definitions and potential ranges remain in `RPG/core/race.py`; the established stat allocation and multiplier rules remain in `RPG/core/stat.py` and `RPG/core/multiplier.py`.
 
 ## Requirements
 
@@ -57,7 +57,7 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m RPG
 ```
 
-The exact Windows launch command after setup is:
+The Windows launch command after setup is:
 
 ```powershell
 .\.venv\Scripts\python.exe -m RPG
@@ -74,10 +74,4 @@ Install the development requirements and run the suite from the project root:
 .\.venv\Scripts\python.exe -m pytest
 ```
 
-The game rules, clipboard profile formatting, save migration, and settings tests do not open a GUI.
-
-## Architecture overview
-
-`GameState` owns one active `Player` character, game settings, a save identifier, and timestamps. Every page reads that shared state; the Character page reuses the existing race, potential, level, allocation, and advanced stat panels. The core modules do not depend on CustomTkinter.
-
-`SaveManager` writes version 2 JSON files with `character`, `game_settings`, and `metadata` fields. It reads the existing version 1 `{ "save_version": 1, "player": ... }` format and raw Player JSON. Loading a legacy file converts it in memory; the original file is only replaced after the user confirms a save overwrite.
+The game rules, progression, titles, attribute calculations, and save migration tests do not open the GUI.

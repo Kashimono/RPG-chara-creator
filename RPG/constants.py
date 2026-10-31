@@ -1,10 +1,13 @@
+from .core.game_config import BASE_EXP_REQUIREMENT
+
 STAT_NAMES = ["HP", "MP", "Attack", "Agility", "Stamina"]
 POTENTIAL_MIN = 1
 POTENTIAL_MAX = 1_000_000
 MAX_POTENTIAL_ROLLS = 10
 BASE_LEVEL = 1
 BASE_EXP = 0
-EXP_TO_NEXT = 100
+# Compatibility alias; progression calculates each threshold by level.
+EXP_TO_NEXT = BASE_EXP_REQUIREMENT
 STAT_POINTS_PER_LEVEL = 10
 
 MILESTONE_MULTIPLIERS = [

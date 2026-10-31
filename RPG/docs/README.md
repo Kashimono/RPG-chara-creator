@@ -1,11 +1,16 @@
 # Architecture notes
 
-The application is organized around a small set of existing game rules and a shared `GameState`.
+The application is organized around the existing character rules and a shared `GameState`.
 
-- `core/` contains the `Player` character model, race database and pity counters, stat potential and multiplier calculations, leveling, clipboard profile formatting, and serializable game state. These modules have no CustomTkinter dependency.
-- `managers/` contains JSON persistence and preference validation. `core/save_manager.py` remains as an import shim for existing callers.
-- `ui/` contains the persistent navigation shell, pages, and the original character builder panels. Pages reference the same active state; the Character page keeps its existing panels alive while the user navigates.
-- `saves/` holds versioned JSON saves. Version 1 `{ "player": ... }` and raw Player save shapes are read in memory and are not rewritten until an explicit save.
-- `tests/` exercises character rules, clipboard output, game state, preferences, and persistence without opening the UI.
+- `core/player.py` owns character progression, base stat allocation, class selection, and title state.
+- `core/leveling.py` calculates level EXP requirements and stat point rewards.
+- `core/progression_config.py` contains race bonus profiles, class definitions, and title milestones.
+- `core/stat_calculator.py` derives primary and advanced attributes from base stats and passive bonuses. It does not import UI code.
+- `core/race.py` retains the race database, rarity rates, race rolling, and pity behavior; `Race.bonus_profile` selects a passive profile.
+- `managers/` owns save serialization and settings validation. Save schema version 3 reads version 2, version 1, and raw Player data.
+- `ui/components/progression_panels.py` provides race passive, class selection, and title panels. The existing stat allocation and race/potential panels remain in use.
+- `tests/` covers the game rules and persistence without opening a window.
 
-The current version intentionally does not include combat, inventory behavior, equipment, skills, idle progression, or sound playback.
+See [PROGRESSION.md](PROGRESSION.md) for formulas, balance values, class bonuses, titles, and migrations.
+
+Combat, enemy damage, equipment, inventory behavior, skills, idle progression, offline rewards, summoning, and ascension are future features.

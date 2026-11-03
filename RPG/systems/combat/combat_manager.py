@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from enum import Enum
 from math import isfinite
 from typing import TYPE_CHECKING, Iterable
+from uuid import uuid4
 
 from . import combat_config
 from .boss_manager import BossManager
@@ -17,6 +18,8 @@ from .enemy_ability import AbilityEvent, EnemyAbilityRuntime, EnemyAttackProfile
 from .enemy_database import EnemyDatabase, EnemyDatabaseError
 from .loot_table import LootDrop, LootRandomSource, LootTableDatabase
 from ..economy.reward_manager import RewardManager, RewardSummary
+from ..inventory.inventory_manager import InventoryManager, ItemCollectionResult
+from ..equipment.equipment_manager import EquipmentManager
 
 if TYPE_CHECKING:
     from ...core.game_state import GameState
@@ -45,6 +48,7 @@ class CombatEvent:
     drops: tuple[LootDrop, ...] = ()
     notifications: tuple[str, ...] = ()
     reward_summary: RewardSummary | None = None
+    item_collections: tuple[ItemCollectionResult, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -70,6 +74,8 @@ class CombatManager:
         recovery_fraction: float = combat_config.RECOVERY_HP_FRACTION,
     ) -> None:
         self.game_state = game_state
+        self.inventory_manager = InventoryManager(game_state)
+        self.equipment_manager = EquipmentManager(game_state, self.inventory_manager.item_database, self.inventory_manager)
         self.rng = rng if rng is not None else random.Random()
         self.loot_rng = loot_rng if loot_rng is not None else (self.rng if hasattr(self.rng, "randint") else random.Random())
         if enemy_database is not None and enemy_definitions is not None:
@@ -102,6 +108,7 @@ class CombatManager:
         self.current_enemy: Enemy | None = None
         self._next_common_index = 0
         self._encounter_mode = "single"
+        self._encounter_id = uuid4().hex
         self._ability_runtime: EnemyAbilityRuntime | None = None
         self._boss_manager = BossManager()
         self._next_enemy_attack_at: float | None = None
@@ -368,6 +375,7 @@ class CombatManager:
         except (OverflowError, ValueError) as exc:
             raise CombatActionError(f"Could not create {definition.name}: {exc}") from exc
         self.current_enemy = enemy
+        self._encounter_id = uuid4().hex
         self._ability_runtime = EnemyAbilityRuntime(enemy)
         self._encounter_mode = mode
         if definition.classification is EnemyClassification.COMMON:
@@ -408,6 +416,11 @@ class CombatManager:
         reward = summary.exp_awarded
         levels = summary.levels_gained
         drops = summary.item_drops + summary.currency_drops
+        item_collections = self.inventory_manager.collect_drops(
+            summary.item_drops,
+            encounter_id=self._encounter_id,
+            source=enemy.name,
+        )
         self._clear_ability_runtime()
         self._next_enemy_attack_at = None
         self._last_regeneration_at = None
@@ -433,8 +446,15 @@ class CombatManager:
             suffix += f" Base Gold reward unavailable: {summary.configuration_warning}."
         if levels:
             suffix += f" Level up: +{levels} level(s), +{levels * 10} stat points."
-        if summary.item_drops:
-            suffix += " Loot: " + ", ".join(f"{drop.reward_id} x{drop.quantity}" for drop in summary.item_drops) + "."
+        if item_collections:
+            lines = []
+            for item in item_collections:
+                rarity = f" [{item.rarity.title()}]" if item.rarity else ""
+                status = f"collected {item.collected_quantity}" if item.collected_quantity else ""
+                if item.unclaimed_quantity:
+                    status += f"; {item.unclaimed_quantity} unclaimed"
+                lines.append(f"{item.item_name}{rarity} x{item.requested_quantity} ({status.strip('; ')})")
+            suffix += " Loot: " + ", ".join(lines) + "."
         else:
             suffix += " No item loot dropped."
         if critical:
@@ -457,6 +477,7 @@ class CombatManager:
             drops=drops,
             notifications=notifications,
             reward_summary=summary,
+            item_collections=item_collections,
         )
 
     def _spawn_common_enemy(self) -> Enemy:
@@ -465,6 +486,7 @@ class CombatManager:
         _ = enemy.attack_interval, enemy.attack, enemy.physical_defense, enemy.magical_defense
         self._next_common_index = (self._next_common_index + 1) % len(self._common_definitions)
         self.current_enemy = enemy
+        self._encounter_id = uuid4().hex
         self._ability_runtime = EnemyAbilityRuntime(enemy)
         self._next_respawn_at = None
         return enemy

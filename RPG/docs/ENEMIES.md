@@ -114,4 +114,4 @@ Non-currency drop IDs are data results written to the combat event and feedback 
 
 ## Persistence
 
-Enemy definitions remain in `RPG/data/`; active enemies, HP, scaling snapshots, effects, cooldowns, phase timers, and loot rolls are transient. Save schema 6 persists aggregate combat statistics and the GameState-owned economy. Older version 5 and earlier saves retain existing character and combat data and receive an empty economy.
+Enemy definitions remain in `RPG/data/`; active enemies, HP, scaling snapshots, effects, cooldowns, phase timers, and loot rolls are transient. Save schema 7 persists aggregate combat statistics, economy, inventory, and equipped item instances. Version 6 and earlier saves retain existing character, combat, and economy data and receive empty inventory and equipment defaults.

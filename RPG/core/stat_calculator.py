@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+from math import isfinite
 from typing import Mapping
 
 from .game_config import (
@@ -64,6 +65,7 @@ def calculate_attributes(
     stats: Mapping[str, Stat],
     race: Race | None = None,
     class_id: str | None = None,
+    equipment_bonuses: Mapping[str, float] | None = None,
 ) -> AttributeSheet:
     """Calculate effective primary stats and combat-ready derived values.
 
@@ -74,24 +76,32 @@ def calculate_attributes(
     class_bonuses = class_definition.bonuses if class_definition else PassiveBonuses()
     bonuses = _combined_bonuses(get_race_bonuses(race), class_bonuses)
 
-    def primary(name: str, multiplier: float) -> float:
-        return max(0.0, stats[name].effective_value * multiplier)
+    equipment = equipment_bonuses or {}
 
-    hp = primary("HP", bonuses.hp_multiplier)
-    mp = primary("MP", bonuses.mp_multiplier)
-    attack = primary("Attack", bonuses.attack_multiplier)
-    agility = primary("Agility", bonuses.agility_multiplier)
-    stamina = primary("Stamina", bonuses.stamina_multiplier)
+    def bonus(name: str) -> float:
+        value = equipment.get(name, 0.0)
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or not isfinite(value):
+            raise ValueError(f"Equipment bonus '{name}' must be finite numeric data.")
+        return float(value)
+
+    def primary(name: str, multiplier: float, attribute: str) -> float:
+        return max(0.0, stats[name].effective_value * multiplier + bonus(attribute))
+
+    hp = primary("HP", bonuses.hp_multiplier, "hp")
+    mp = primary("MP", bonuses.mp_multiplier, "mp")
+    attack = primary("Attack", bonuses.attack_multiplier, "attack")
+    agility = primary("Agility", bonuses.agility_multiplier, "agility")
+    stamina = primary("Stamina", bonuses.stamina_multiplier, "stamina")
 
     physical_defense = max(
         0.0,
         (stamina * PHYSICAL_DEFENSE_STAMINA_FACTOR + attack * PHYSICAL_DEFENSE_ATTACK_FACTOR)
-        * bonuses.physical_defense_multiplier,
+        * bonuses.physical_defense_multiplier + bonus("physical_defense"),
     )
     magical_defense = max(
         0.0,
         (mp * MAGICAL_DEFENSE_MP_FACTOR + stamina * MAGICAL_DEFENSE_STAMINA_FACTOR)
-        * bonuses.magical_defense_multiplier,
+        * bonuses.magical_defense_multiplier + bonus("magical_defense"),
     )
     critical_chance = min(
         MAX_CRITICAL_CHANCE,
@@ -99,28 +109,31 @@ def calculate_attributes(
             0.0,
             BASE_CRITICAL_CHANCE
             + CRITICAL_CHANCE_AGILITY_FACTOR * agility / (agility + CRITICAL_AGILITY_SCALE)
-            + bonuses.critical_chance_bonus,
+            + bonuses.critical_chance_bonus
+            + bonus("critical_chance"),
         ),
     )
     critical_damage = min(
         MAX_CRITICAL_DAMAGE,
-        max(BASE_CRITICAL_DAMAGE, (BASE_CRITICAL_DAMAGE + attack / (attack + CRITICAL_ATTACK_SCALE)) * bonuses.critical_damage_multiplier),
+        max(BASE_CRITICAL_DAMAGE, (BASE_CRITICAL_DAMAGE + attack / (attack + CRITICAL_ATTACK_SCALE)) * bonuses.critical_damage_multiplier + bonus("critical_damage")),
     )
     attack_speed = min(
         MAX_ATTACK_SPEED,
         max(
             BASE_ATTACK_SPEED,
             (BASE_ATTACK_SPEED + ATTACK_SPEED_AGILITY_FACTOR * agility / (agility + ATTACK_SPEED_AGILITY_SCALE))
-            * bonuses.attack_speed_multiplier,
+            * bonuses.attack_speed_multiplier + bonus("attack_speed"),
         ),
     )
     hp_regeneration = max(
         0.0,
-        (stamina * HP_REGEN_STAMINA_FACTOR + hp * HP_REGEN_HP_FACTOR) * bonuses.hp_regen_multiplier,
+        (stamina * HP_REGEN_STAMINA_FACTOR + hp * HP_REGEN_HP_FACTOR) * bonuses.hp_regen_multiplier
+        + bonus("hp_regeneration"),
     )
     mp_regeneration = max(
         0.0,
-        (mp * MP_REGEN_MP_FACTOR + stamina * MP_REGEN_STAMINA_FACTOR) * bonuses.mp_regen_multiplier,
+        (mp * MP_REGEN_MP_FACTOR + stamina * MP_REGEN_STAMINA_FACTOR) * bonuses.mp_regen_multiplier
+        + bonus("mp_regeneration"),
     )
 
     return AttributeSheet(

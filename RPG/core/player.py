@@ -24,6 +24,7 @@ class Player:
         self.exp = LevelSystem.starting_exp()
         self.exp_to_next = LevelSystem.next_level_exp(self.level)
         self._current_hp: float | None = None
+        self._equipment_bonuses: dict[str, float] = {}
         self.stat_points = 0
         self.character_created = False
         self.class_id: Optional[str] = None
@@ -46,6 +47,7 @@ class Player:
         self.exp = LevelSystem.starting_exp()
         self.exp_to_next = LevelSystem.next_level_exp(self.level)
         self._current_hp = None
+        self._equipment_bonuses = {}
         self.stat_points = 0
         self.character_created = False
         self.class_id = None
@@ -201,7 +203,30 @@ class Player:
     @property
     def calculated_attributes(self) -> AttributeSheet:
         active_race = self.race if self.race_accepted else None
-        return calculate_attributes(self.stats, active_race, self.class_id)
+        return calculate_attributes(self.stats, active_race, self.class_id, self._equipment_bonuses)
+
+    @property
+    def equipment_bonuses(self) -> dict[str, float]:
+        return dict(self._equipment_bonuses)
+
+    def set_equipment_bonuses(self, bonuses: dict[str, float]) -> None:
+        """Apply transient gear bonuses without changing progression stats."""
+        from ..systems.inventory.item import EQUIPMENT_ATTRIBUTES
+
+        normalized: dict[str, float] = {}
+        for attribute, value in bonuses.items():
+            if attribute not in EQUIPMENT_ATTRIBUTES:
+                raise ValueError(f"Unsupported equipment attribute: {attribute}")
+            if isinstance(value, bool) or not isinstance(value, (int, float)) or not isfinite(value):
+                raise ValueError(f"Equipment bonus '{attribute}' must be finite numeric data.")
+            normalized[attribute] = float(value)
+        if normalized == self._equipment_bonuses:
+            return
+        previous_hp = self.current_hp
+        previous_maximum = self.maximum_hp
+        self._equipment_bonuses = normalized
+        if self._current_hp is not None or self.maximum_hp != previous_maximum:
+            self.set_current_hp(previous_hp)
 
     @property
     def maximum_hp(self) -> float:

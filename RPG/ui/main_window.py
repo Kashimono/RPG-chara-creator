@@ -79,7 +79,7 @@ class MainWindow(ctk.CTk):
                 lambda: self.game_state,
                 self.handle_game_change,
             ),
-            "inventory": InventoryPage(self.page_container),
+            "inventory": InventoryPage(self.page_container, lambda: self.game_state, self.handle_game_change),
             "settings": SettingsPage(
                 self.page_container,
                 lambda: self.game_state,
@@ -99,6 +99,12 @@ class MainWindow(ctk.CTk):
         self.refresh_views()
 
     def refresh_views(self) -> None:
+        inventory_page = self.pages.get("inventory")
+        if inventory_page is not None:
+            inventory_page.bind_game_state()
+        combat_page = self.pages.get("combat")
+        if combat_page is not None:
+            combat_page._bind_game_state()
         for page in self.pages.values():
             refresh = getattr(page, "refresh", None)
             if callable(refresh):

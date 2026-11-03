@@ -7,7 +7,7 @@ Update 4 adds Gold as the first currency and a small character training shop. Ec
 - `GameState.economy` stores currency accounts, lifetime earned/spent counters, successful purchase count, and the bounded transaction history.
 - `EconomyManager` validates every credit, debit, and purchase, then updates the wallet and its transaction record together. UI code reads balances from GameState and never edits them.
 - `RewardCalculator` calculates guaranteed enemy Gold from the configured enemy ID and records the factors used.
-- `RewardManager` runs after the existing enemy claim guard. It calls the existing EXP award path and rolls the existing loot table once, then credits guaranteed Gold and currency loot through EconomyManager. Existing non-currency drops stay in the combat summary and are not placed in an inventory.
+- `RewardManager` runs after the existing enemy claim guard. It calls the existing EXP award path and rolls the existing loot table once, then credits guaranteed Gold and currency loot through EconomyManager. InventoryManager collects the non-currency drops.
 - `TrainingShop` validates a configured purchase and calls `Player.allocate_points`. Training uses that method's existing accepted-potential checks and does not consume level-earned stat points. Gold is committed only after the stat allocation succeeds.
 
 ## Gold rewards
@@ -40,10 +40,12 @@ Each successful operation records a unique transaction ID, transaction type, cur
 
 The initial configurable options are Strength (Attack), Vitality (HP), Agility, Endurance (Stamina), and Arcane (MP) training. Each costs 100 Gold and grants one point. Training only works after character creation and acceptance of the targeted stat's potential. Reaching potential blocks the purchase without deducting currency. The existing attribute calculation derives the updated combat attributes from the changed stat.
 
-The Economy page shows current balance, lifetime totals, purchase count, available training, refusal reasons, and recent transactions. Dashboard displays current Gold and lifetime earned. Combat defeat feedback shows EXP, guaranteed Gold, additional Gold drops, total credited Gold, and structured item drops.
+The Economy page shows current balance, lifetime totals, purchase count, available training, refusal reasons, and recent transactions. Dashboard displays current Gold and lifetime earned. Combat defeat feedback shows EXP, guaranteed Gold, additional Gold drops, total credited Gold, and item collection results.
+
+Eligible inventory items can be sold through `InventoryManager`. Each sale is recorded as an earned `item_sale` transaction by `EconomyManager`. Sale value is base sell value multiplied by rarity sale multiplier and quantity, rounded to the nearest whole Gold with half values rounded upward. Inventory removal occurs only after the wallet amount and transaction are validated. Equipped items cannot be sold.
 
 ## Persistence and tuning
 
-Save schema 6 adds the `economy` object to the `GameState` envelope. Version 5, version 4, version 3, version 2, version 1, and raw legacy saves get a zero balance, zero lifetime totals, and empty history without changing their character progression or combat statistics. Loading does not rewrite a save; the normal explicit save operation writes schema 6.
+Save schema 7 stores economy, inventory, and equipment in the `GameState` envelope. Earlier save versions preserve their existing economy migration behavior and get empty inventory/equipment defaults. Loading does not rewrite a save; the normal explicit save operation writes schema 7.
 
-Edit enemy rewards, multipliers, history size, or training options in `RPG/data/economy.json`. Edit optional currency drop rates and quantities in `RPG/data/loot_tables.json`. New enemy definitions need their own economy reward entry before they produce a guaranteed Gold payout. Currency support currently includes Gold only. Inventory storage, item sales, equipment, upgrades, and idle rewards are not implemented.
+Edit enemy rewards, multipliers, history size, or training options in `RPG/data/economy.json`. Edit currency and item drop rates and quantities in `RPG/data/loot_tables.json`. New enemy definitions need their own economy reward entry before they produce a guaranteed Gold payout. Currency support currently includes Gold only. Inventory and equipment are documented in `INVENTORY.md`.

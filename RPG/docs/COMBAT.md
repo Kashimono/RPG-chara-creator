@@ -35,7 +35,7 @@ See [Enemy Database and Encounters](ENEMIES.md) for data files, classifications,
 - Static enemy and ability content lives in `RPG/data/` and is validated before the Combat page can use it.
 - `EnemyDatabase` handles definition loading and lookup. `Enemy` holds one uniquely identified encounter. `CombatManager` controls encounter timing, rewards, and state.
 - `EnemyAbilityRuntime` owns temporary cooldowns/effects. `BossManager` advances definition-driven phases and claims boss rewards once.
-- `LootTableDatabase` returns structured `LootDrop` values attached to the defeat `CombatEvent`. `RewardManager` processes that one roll and separates Gold entries from item feedback; item IDs still are not added to an inventory.
+- `LootTableDatabase` returns structured `LootDrop` values attached to the defeat `CombatEvent`. `RewardManager` processes that one roll and separates Gold entries from item drops. Non-currency drops are collected by InventoryManager into GameState.
 
 ## EXP and statistics
 
@@ -43,8 +43,10 @@ Defeat rewards use `RewardManager` to coordinate the existing `GameState.award_c
 
 Persistent combat statistics include damage dealt/received, enemies defeated, critical hits, attacks, EXP, Elite defeats, Boss defeats, and World Boss defeats. The existing per-enemy claim guard remains the idempotency boundary: repeated callbacks cannot award EXP, statistics, Gold, or loot twice. Bosses still use `BossManager.claim_defeat`.
 
+Inventory capacity overflow and unknown item IDs become serialized unclaimed loot entries. They can be claimed after space is available, and each drop is keyed to its unique encounter so it cannot be collected twice.
+
 ## Save compatibility
 
-Save schema 6 keeps enemy definitions and all encounter state out of character files. It adds the GameState-owned economy object while retaining all schema 5 combat statistics. A version 5 save receives a zeroed wallet and empty transaction history; versions 4 through 1 and raw legacy saves keep their existing migration behavior and also receive economy defaults. Loading never resumes an enemy, ability cooldown, boss phase timer, or callback; the next session begins safely at `IDLE` unless saved player HP is zero.
+Save schema 7 keeps enemy definitions and all encounter state out of character files. It retains economy data and adds GameState-owned inventory and equipment records. Version 6 and older saves receive empty inventory and equipment defaults. Loading never resumes an enemy, ability cooldown, boss phase timer, or callback; the next session begins safely at `IDLE` unless saved player HP is zero.
 
 The generic `SaveManager` continues serializing `GameState.to_dict()` and requires no enemy-specific serialization path.

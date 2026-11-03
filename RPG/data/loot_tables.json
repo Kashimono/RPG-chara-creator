@@ -4,7 +4,8 @@
       "table_id": "common_drop",
       "entries": [
         { "reward_id": "monster_essence", "drop_chance": 0.2, "min_quantity": 1, "max_quantity": 2 },
-        { "reward_id": "gold_cache", "currency_type": "gold", "drop_chance": 0.15, "min_quantity": 2, "max_quantity": 5 }
+        { "reward_id": "gold_cache", "currency_type": "gold", "drop_chance": 0.15, "min_quantity": 2, "max_quantity": 5 },
+        { "reward_id": "torn_map_fragment", "drop_chance": 0.04, "min_quantity": 1, "max_quantity": 1 }
       ]
     },
     {
@@ -12,27 +13,33 @@
       "entries": [
         { "reward_id": "monster_essence", "drop_chance": 0.45, "min_quantity": 1, "max_quantity": 3 },
         { "reward_id": "beast_fang", "drop_chance": 0.2, "min_quantity": 1, "max_quantity": 2 },
-        { "reward_id": "gold_cache", "currency_type": "gold", "drop_chance": 0.2, "min_quantity": 4, "max_quantity": 12 }
+        { "reward_id": "gold_cache", "currency_type": "gold", "drop_chance": 0.2, "min_quantity": 4, "max_quantity": 12 },
+        { "reward_id": "rusty_sword", "drop_chance": 0.08, "min_quantity": 1, "max_quantity": 1 },
+        { "reward_id": "torn_map_fragment", "drop_chance": 0.06, "min_quantity": 1, "max_quantity": 2 }
       ],
-      "max_drops": 3
+      "max_drops": 5
     },
     {
       "table_id": "rare_drop",
       "entries": [
         { "reward_id": "monster_essence", "drop_chance": 0.7, "min_quantity": 2, "max_quantity": 4 },
         { "reward_id": "ancient_shard", "drop_chance": 0.35, "min_quantity": 1, "max_quantity": 2 },
-        { "reward_id": "gold_cache", "currency_type": "gold", "drop_chance": 0.25, "min_quantity": 10, "max_quantity": 30 }
+        { "reward_id": "gold_cache", "currency_type": "gold", "drop_chance": 0.25, "min_quantity": 10, "max_quantity": 30 },
+        { "reward_id": "traveler_vest", "drop_chance": 0.08, "min_quantity": 1, "max_quantity": 1 },
+        { "reward_id": "arcane_staff", "drop_chance": 0.04, "min_quantity": 1, "max_quantity": 1 }
       ],
-      "max_drops": 3
+      "max_drops": 5
     },
     {
       "table_id": "elite_drop",
       "entries": [
         { "reward_id": "monster_essence", "drop_chance": 1.0, "min_quantity": 3, "max_quantity": 6, "guaranteed": true },
         { "reward_id": "elite_core", "drop_chance": 0.45, "min_quantity": 1, "max_quantity": 1 },
-        { "reward_id": "gold_cache", "currency_type": "gold", "drop_chance": 0.35, "min_quantity": 25, "max_quantity": 75 }
+        { "reward_id": "gold_cache", "currency_type": "gold", "drop_chance": 0.35, "min_quantity": 25, "max_quantity": 75 },
+        { "reward_id": "iron_helm", "drop_chance": 0.12, "min_quantity": 1, "max_quantity": 1 },
+        { "reward_id": "wanderer_boots", "drop_chance": 0.1, "min_quantity": 1, "max_quantity": 1 }
       ],
-      "max_drops": 3
+      "max_drops": 5
     },
     {
       "table_id": "boss_drop",
@@ -40,9 +47,11 @@
         { "reward_id": "boss_trophy", "drop_chance": 1.0, "min_quantity": 1, "max_quantity": 1, "guaranteed": true },
         { "reward_id": "dragon_scale", "drop_chance": 0.7, "min_quantity": 1, "max_quantity": 3 },
         { "reward_id": "ancient_shard", "drop_chance": 1.0, "min_quantity": 2, "max_quantity": 5 },
-        { "reward_id": "gold_cache", "currency_type": "gold", "drop_chance": 0.65, "min_quantity": 100, "max_quantity": 300 }
+        { "reward_id": "gold_cache", "currency_type": "gold", "drop_chance": 0.65, "min_quantity": 100, "max_quantity": 300 },
+        { "reward_id": "warden_plate", "drop_chance": 0.12, "min_quantity": 1, "max_quantity": 1 },
+        { "reward_id": "phoenix_charm", "drop_chance": 0.08, "min_quantity": 1, "max_quantity": 1 }
       ],
-      "max_drops": 5
+      "max_drops": 6
     },
     {
       "table_id": "world_boss_drop",
@@ -50,9 +59,11 @@
         { "reward_id": "world_boss_trophy", "drop_chance": 1.0, "min_quantity": 1, "max_quantity": 1, "guaranteed": true },
         { "reward_id": "primordial_essence", "drop_chance": 1.0, "min_quantity": 5, "max_quantity": 10, "guaranteed": true },
         { "reward_id": "ancient_shard", "drop_chance": 0.8, "min_quantity": 5, "max_quantity": 12 },
-        { "reward_id": "gold_cache", "currency_type": "gold", "drop_chance": 0.85, "min_quantity": 500, "max_quantity": 1500 }
+        { "reward_id": "gold_cache", "currency_type": "gold", "drop_chance": 0.85, "min_quantity": 500, "max_quantity": 1500 },
+        { "reward_id": "dragon_slayer", "drop_chance": 0.1, "min_quantity": 1, "max_quantity": 1 },
+        { "reward_id": "primordial_crown", "drop_chance": 0.03, "min_quantity": 1, "max_quantity": 1 }
       ],
-      "max_drops": 6
+      "max_drops": 7
     }
   ]
 }

@@ -146,6 +146,37 @@ class EconomyManager:
         self.game_state.economy.append_transactions([tx], history_limit=self.config.transaction_history_limit)
         return tx
 
+    def credit_currency_with_operation(
+        self,
+        amount: int,
+        *,
+        currency_type: str = "gold",
+        transaction_type: TransactionType | str,
+        source: str,
+        description: str,
+        apply_operation: Callable[[], bool],
+        reference_id: str | None = None,
+    ) -> CurrencyTransaction | None:
+        """Apply a validated external state change before recording a credit.
+
+        Used for item sales so invalid or overflowing credits leave both the
+        inventory and wallet untouched.
+        """
+        currency = normalize_currency(currency_type)
+        value = validate_currency_amount(amount)
+        account = self.game_state.economy.accounts[currency]
+        if account.balance + value > MAX_CURRENCY_VALUE or account.total_earned + value > MAX_CURRENCY_VALUE:
+            raise EconomyTransactionError("Currency balance or lifetime earnings would exceed the supported safe integer range.")
+        tx = self._make_transaction(transaction_type, currency, value, TransactionDirection.EARNED, source, description, reference_id)
+        self._ensure_unique((tx,))
+        if not apply_operation():
+            return None
+        self.game_state.economy.accounts[currency] = CurrencyAccount(
+            account.balance + value, account.total_earned + value, account.total_spent,
+        )
+        self.game_state.economy.append_transactions([tx], history_limit=self.config.transaction_history_limit)
+        return tx
+
     def _spend(
         self,
         amount: int,

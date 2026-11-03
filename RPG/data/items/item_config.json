@@ -1,0 +1,22 @@
+{
+  "inventory_capacity": 50,
+  "rarities": [
+    { "rarity_id": "common", "display_name": "Common", "color_hex": "#b7bec8", "bonus_multiplier": 1.0, "sell_multiplier": 1.0 },
+    { "rarity_id": "uncommon", "display_name": "Uncommon", "color_hex": "#61c879", "bonus_multiplier": 1.1, "sell_multiplier": 1.25 },
+    { "rarity_id": "rare", "display_name": "Rare", "color_hex": "#6ba6ff", "bonus_multiplier": 1.25, "sell_multiplier": 1.5 },
+    { "rarity_id": "epic", "display_name": "Epic", "color_hex": "#b783ff", "bonus_multiplier": 1.5, "sell_multiplier": 2.0 },
+    { "rarity_id": "legendary", "display_name": "Legendary", "color_hex": "#f0a54b", "bonus_multiplier": 1.8, "sell_multiplier": 3.0 },
+    { "rarity_id": "mythic", "display_name": "Mythic", "color_hex": "#ef6868", "bonus_multiplier": 2.0, "sell_multiplier": 5.0 }
+  ],
+  "equipment_slots": [
+    { "slot_id": "main_hand", "display_name": "Main Hand", "equipment_slot": "main_hand", "accepted_subtypes": ["weapon"] },
+    { "slot_id": "off_hand", "display_name": "Off Hand", "equipment_slot": "off_hand", "accepted_subtypes": ["weapon", "armor"] },
+    { "slot_id": "head", "display_name": "Head", "equipment_slot": "head", "accepted_subtypes": ["armor"] },
+    { "slot_id": "chest", "display_name": "Chest", "equipment_slot": "chest", "accepted_subtypes": ["armor"] },
+    { "slot_id": "legs", "display_name": "Legs", "equipment_slot": "legs", "accepted_subtypes": ["armor"] },
+    { "slot_id": "feet", "display_name": "Feet", "equipment_slot": "feet", "accepted_subtypes": ["armor"] },
+    { "slot_id": "hands", "display_name": "Hands", "equipment_slot": "hands", "accepted_subtypes": ["armor"] },
+    { "slot_id": "accessory_1", "display_name": "Accessory 1", "equipment_slot": "accessory", "accepted_subtypes": ["accessory"] },
+    { "slot_id": "accessory_2", "display_name": "Accessory 2", "equipment_slot": "accessory", "accepted_subtypes": ["accessory"] }
+  ]
+}

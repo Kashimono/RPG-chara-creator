@@ -1,0 +1,5 @@
+{
+  "items": [
+    { "id": "torn_map_fragment", "name": "Torn Map Fragment", "description": "A weathered piece of a map with unfamiliar markings.", "type": "miscellaneous", "subtype": "quest_trinket", "rarity": "uncommon", "max_stack": 99, "sell_value": 5 }
+  ]
+}

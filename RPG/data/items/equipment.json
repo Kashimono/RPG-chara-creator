@@ -1,0 +1,82 @@
+{
+  "items": [
+    {
+      "id": "rusty_sword", "name": "Rusty Sword", "description": "A worn blade that is still serviceable.",
+      "type": "equipment", "subtype": "weapon", "rarity": "common", "max_stack": 1,
+      "sell_value": 10, "can_sell": true, "can_discard": true, "can_equip": true,
+      "equipment_slot": "main_hand", "required_level": 1, "bonuses": { "attack": 5 }
+    },
+    {
+      "id": "oak_shield", "name": "Oak Shield", "description": "A sturdy round shield reinforced with iron bands.",
+      "type": "equipment", "subtype": "armor", "rarity": "common", "max_stack": 1,
+      "sell_value": 12, "can_sell": true, "can_discard": true, "can_equip": true,
+      "equipment_slot": "off_hand", "required_level": 1, "bonuses": { "physical_defense": 5, "magical_defense": 2 }
+    },
+    {
+      "id": "traveler_vest", "name": "Traveler's Vest", "description": "Light armor for long roads and sudden trouble.",
+      "type": "equipment", "subtype": "armor", "rarity": "common", "max_stack": 1,
+      "sell_value": 14, "can_sell": true, "can_discard": true, "can_equip": true,
+      "equipment_slot": "chest", "required_level": 1, "bonuses": { "hp": 18, "physical_defense": 3 }
+    },
+    {
+      "id": "leather_leggings", "name": "Leather Leggings", "description": "Supple leg armor that leaves room to move.",
+      "type": "equipment", "subtype": "armor", "rarity": "common", "max_stack": 1,
+      "sell_value": 9, "can_sell": true, "can_discard": true, "can_equip": true,
+      "equipment_slot": "legs", "required_level": 1, "bonuses": { "agility": 2 }
+    },
+    {
+      "id": "iron_helm", "name": "Iron Helm", "description": "A close-fitting helm with a reinforced brow.",
+      "type": "equipment", "subtype": "armor", "rarity": "uncommon", "max_stack": 1,
+      "sell_value": 25, "can_sell": true, "can_discard": true, "can_equip": true,
+      "equipment_slot": "head", "required_level": 2, "bonuses": { "hp": 12, "physical_defense": 5 }
+    },
+    {
+      "id": "wanderer_boots", "name": "Wanderer Boots", "description": "Well-made boots that help keep a quick pace.",
+      "type": "equipment", "subtype": "armor", "rarity": "uncommon", "max_stack": 1,
+      "sell_value": 23, "can_sell": true, "can_discard": true, "can_equip": true,
+      "equipment_slot": "feet", "required_level": 2, "bonuses": { "agility": 3, "attack_speed": 0.05 }
+    },
+    {
+      "id": "grip_gloves", "name": "Grip Gloves", "description": "Reinforced gloves that steady a weapon grip.",
+      "type": "equipment", "subtype": "armor", "rarity": "uncommon", "max_stack": 1,
+      "sell_value": 20, "can_sell": true, "can_discard": true, "can_equip": true,
+      "equipment_slot": "hands", "required_level": 2, "bonuses": { "attack": 3 }
+    },
+    {
+      "id": "arcane_staff", "name": "Arcane Staff", "description": "A carved staff that channels a measured stream of magic.",
+      "type": "equipment", "subtype": "weapon", "rarity": "rare", "max_stack": 1,
+      "sell_value": 55, "can_sell": true, "can_discard": true, "can_equip": true,
+      "equipment_slot": "main_hand", "required_level": 4, "bonuses": { "attack": 10, "mp": 12, "magical_defense": 4 }
+    },
+    {
+      "id": "silver_ring", "name": "Silver Ring", "description": "A silver band engraved with a quiet warding sigil.",
+      "type": "equipment", "subtype": "accessory", "rarity": "rare", "max_stack": 1,
+      "sell_value": 48, "can_sell": true, "can_discard": true, "can_equip": true,
+      "equipment_slot": "accessory", "required_level": 4, "bonuses": { "critical_chance": 0.02, "mp_regeneration": 0.1 }
+    },
+    {
+      "id": "warden_plate", "name": "Warden Plate", "description": "A tempered cuirass once worn by a ruin sentinel.",
+      "type": "equipment", "subtype": "armor", "rarity": "epic", "max_stack": 1,
+      "sell_value": 130, "can_sell": true, "can_discard": true, "can_equip": true,
+      "equipment_slot": "chest", "required_level": 8, "bonuses": { "hp": 35, "physical_defense": 15, "magical_defense": 6 }
+    },
+    {
+      "id": "phoenix_charm", "name": "Phoenix Charm", "description": "A warm charm that quickens the wearer's recovery.",
+      "type": "equipment", "subtype": "accessory", "rarity": "epic", "max_stack": 1,
+      "sell_value": 160, "can_sell": true, "can_discard": true, "can_equip": true,
+      "equipment_slot": "accessory", "required_level": 10, "bonuses": { "hp_regeneration": 0.4, "critical_damage": 0.1 }
+    },
+    {
+      "id": "dragon_slayer", "name": "Dragon Slayer", "description": "A legendary blade made to pierce scales and ancient wards.",
+      "type": "equipment", "subtype": "weapon", "rarity": "legendary", "max_stack": 1,
+      "sell_value": 550, "can_sell": true, "can_discard": true, "can_equip": true,
+      "equipment_slot": "main_hand", "required_level": 15, "bonuses": { "attack": 45, "critical_damage": 0.2 }
+    },
+    {
+      "id": "primordial_crown", "name": "Primordial Crown", "description": "A relic circlet shaped from a fragment of the world's first dawn.",
+      "type": "equipment", "subtype": "armor", "rarity": "mythic", "max_stack": 1,
+      "sell_value": 2500, "can_sell": true, "can_discard": true, "can_equip": true,
+      "equipment_slot": "head", "required_level": 25, "bonuses": { "hp": 80, "mp": 60, "magical_defense": 30, "critical_chance": 0.04 }
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "items": [
+    { "id": "monster_essence", "name": "Monster Essence", "description": "A faintly glowing residue left by a defeated creature.", "type": "material", "subtype": "essence", "rarity": "common", "max_stack": 99, "sell_value": 2 },
+    { "id": "beast_fang", "name": "Beast Fang", "description": "A sharp fang from a dangerous wild beast.", "type": "material", "subtype": "trophy", "rarity": "uncommon", "max_stack": 99, "sell_value": 8 },
+    { "id": "ancient_shard", "name": "Ancient Shard", "description": "A fragment of stone etched with old magic.", "type": "material", "subtype": "relic_fragment", "rarity": "rare", "max_stack": 99, "sell_value": 22 },
+    { "id": "elite_core", "name": "Elite Core", "description": "A dense core pulsing with an elite creature's power.", "type": "material", "subtype": "core", "rarity": "epic", "max_stack": 99, "sell_value": 80 },
+    { "id": "boss_trophy", "name": "Boss Trophy", "description": "A proof of victory over a mighty boss.", "type": "material", "subtype": "trophy", "rarity": "legendary", "max_stack": 99, "sell_value": 250 },
+    { "id": "dragon_scale", "name": "Dragon Scale", "description": "A durable scale shed by an ancient dragon.", "type": "material", "subtype": "hide", "rarity": "epic", "max_stack": 99, "sell_value": 90 },
+    { "id": "world_boss_trophy", "name": "World Boss Trophy", "description": "A rare token earned from an exceptional world threat.", "type": "material", "subtype": "trophy", "rarity": "mythic", "max_stack": 99, "sell_value": 800 },
+    { "id": "primordial_essence", "name": "Primordial Essence", "description": "An unstable mote of power from before recorded time.", "type": "material", "subtype": "essence", "rarity": "mythic", "max_stack": 99, "sell_value": 1200 }
+  ]
+}

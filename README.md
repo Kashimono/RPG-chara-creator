@@ -13,14 +13,17 @@ A dark fantasy clicker RPG made with Python and CustomTkinter. The application h
 - View Physical Defense, Magical Defense, Critical Chance, Critical Damage, Attack Speed, HP Regeneration, and MP Regeneration.
 - Fight a data-driven roster of 17 Common, Uncommon, Rare, Elite, Boss, and World Boss enemies with click attacks, enemy abilities, boss phases, structured loot rolls, HP regeneration, retreat, recovery, and EXP rewards.
 - Earn configurable guaranteed Gold rewards and optional Gold loot drops through the existing defeat and loot-table flow. Spend Gold on five potential-aware training options, with transaction history saved in GameState.
+- Collect enemy materials, trophies, miscellaneous items, and equipment in a 50-slot inventory. Stack or split materials, inspect and filter items, and claim drops that could not fit in the bag.
+- Equip weapons, armor, and accessories across nine configured slots. Rarity scales configured bonuses and sale value; gear bonuses flow through the shared character calculator and combat.
+- Sell eligible inventory items through recorded EconomyManager transactions. Equipped gear cannot be sold; equipment swaps and item sales validate before committing.
 - Browse enemies by classification, start optional Elite encounters, and explicitly confirm Boss and World Boss challenges. The Common rotation retains the original five enemies and timed respawns.
-- Save and load characters with version 6 JSON. Version 5 and older saves preserve character/combat data and receive a zeroed economy during migration.
-- Use Dashboard, Character, Combat, Economy, Inventory, and Settings navigation. Inventory remains a planned placeholder.
+- Save and load characters with version 7 JSON. Version 6 and older saves preserve character, combat, and economy data and receive empty inventory/equipment state during migration.
+- Use Dashboard, Character, Combat, Economy, Inventory, and Settings navigation. Character and Inventory show equipped items and effective gear bonuses.
 - Copy the existing character profile to the clipboard and choose an appearance preference.
 
 Progression rules are documented in [`RPG/docs/PROGRESSION.md`](RPG/docs/PROGRESSION.md). Combat formulas and encounter behavior are documented in [`RPG/docs/COMBAT.md`](RPG/docs/COMBAT.md), economy design and tuning in [`RPG/docs/ECONOMY.md`](RPG/docs/ECONOMY.md), with enemy data, scaling, abilities, phases, and loot in [`RPG/docs/ENEMIES.md`](RPG/docs/ENEMIES.md).
 
-Non-currency loot remains structured combat feedback only; it is not stored in an inventory. Equipment, player skills, idle or offline combat, world maps, dungeons, summoning, and ascension remain future features.
+Player skills, equipment enhancement, crafting, idle or offline combat, world maps, dungeons, summoning, and ascension remain future features.
 
 ## Project structure
 
@@ -31,6 +34,9 @@ RPG/
   managers/             Save and settings services
   systems/combat/       Enemy database, abilities, boss phases, loot, damage, and encounters
   systems/economy/      Currency state, transactions, reward calculation, and training shop
+  systems/inventory/    Item data, bag capacity and stacking, loot collection, and sales
+  systems/equipment/    Equipment slots, validation, persistence, and bonus calculation
+  data/items/           Item definitions, rarity tuning, capacity, and slot configuration
   ui/
     main_window.py      Application shell and shared actions
     navigation.py       Persistent sidebar
@@ -38,7 +44,7 @@ RPG/
     pages/              Dashboard, Character, Combat, Economy, Inventory, Settings
     *_panel.py          Race, potential, level, allocation, and advanced stats
   saves/                JSON character saves
-  docs/                 Architecture and progression documentation
+  docs/                 Architecture, progression, combat, economy, and inventory documentation
 tests/                  Logic and persistence tests
 requirements-dev.txt    Test tooling plus app requirements
 run_rpg.bat             Windows launcher for an existing .venv

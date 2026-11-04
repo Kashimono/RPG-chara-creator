@@ -173,11 +173,31 @@ class CombatPage(ctk.CTkFrame):
         self.player_hp_bar = ctk.CTkProgressBar(self.player_panel, height=18, corner_radius=9, progress_color="#51a86b")
         self.player_hp_bar.grid(row=3, column=0, sticky="ew", padx=18, pady=(0, 12))
         self.player_hp_bar.set(0)
+        self.player_mp_label = ctk.CTkLabel(
+            self.player_panel, text="MP: - / -", anchor="w", font=ctk.CTkFont(size=13, weight="bold"), text_color=TEXT_COLOR,
+        )
+        self.player_mp_label.grid(row=4, column=0, sticky="ew", padx=18, pady=(0, 5))
+        self.player_mp_bar = ctk.CTkProgressBar(self.player_panel, height=14, corner_radius=7, progress_color="#568dd1")
+        self.player_mp_bar.grid(row=5, column=0, sticky="ew", padx=18, pady=(0, 10))
+        self.player_mp_bar.set(0)
+        ctk.CTkLabel(self.player_panel, text="EQUIPPED SKILLS", anchor="w", font=ctk.CTkFont(size=10, weight="bold"), text_color=SECONDARY_TEXT).grid(row=6, column=0, sticky="ew", padx=18, pady=(0, 5))
+        self.skill_hotbar = ctk.CTkFrame(self.player_panel, fg_color="transparent")
+        self.skill_hotbar.grid(row=7, column=0, sticky="ew", padx=12, pady=(0, 10))
+        for column in range(2):
+            self.skill_hotbar.grid_columnconfigure(column, weight=1)
+        self.skill_buttons: list[ctk.CTkButton] = []
+        for index in range(6):
+            button = ctk.CTkButton(
+                self.skill_hotbar, text=f"Slot {index + 1}", height=42, corner_radius=10,
+                fg_color="#39465b", hover_color="#4d6280", command=lambda slot=index: self._activate_slot(slot),
+            )
+            button.grid(row=index // 2, column=index % 2, sticky="ew", padx=3, pady=3)
+            self.skill_buttons.append(button)
         self.player_attributes_label = ctk.CTkLabel(
             self.player_panel, text="Attack: -\nPhysical Defense: -\nCritical Chance: -\nCritical Damage: -\nAttack Speed: -\nHP Regeneration: -",
             anchor="w", justify="left", font=ctk.CTkFont(size=12), text_color=TEXT_COLOR,
         )
-        self.player_attributes_label.grid(row=4, column=0, sticky="ew", padx=18, pady=(0, 17))
+        self.player_attributes_label.grid(row=8, column=0, sticky="ew", padx=18, pady=(0, 17))
 
     def _build_feedback_panel(self) -> None:
         self.feedback_panel = ctk.CTkFrame(self.body, fg_color=SURFACE_COLOR, corner_radius=18)
@@ -212,6 +232,8 @@ class CombatPage(ctk.CTkFrame):
             ("total_enemies_defeated", "Enemies defeated"),
             ("total_critical_hits", "Critical hits"),
             ("total_attacks_performed", "Attacks performed"),
+            ("total_skills_used", "Skills used"),
+            ("total_skill_damage", "Skill damage"),
             ("total_exp_earned", "Combat EXP earned"),
             ("total_elites_defeated", "Elites defeated"),
             ("total_bosses_defeated", "Bosses defeated"),
@@ -334,6 +356,24 @@ class CombatPage(ctk.CTkFrame):
         self.on_dirty()
         self.refresh()
 
+    def _activate_slot(self, slot: int) -> None:
+        equipped = self.manager.skill_manager.progress.equipped_skill_ids
+        if slot >= len(equipped):
+            return
+        skill_id = equipped[slot]
+        try:
+            event = self.manager.activate_skill(skill_id)
+        except CombatActionError as exc:
+            self._show_message(str(exc), "#e7bd65")
+            self.refresh()
+            return
+        self._handle_event(event)
+        self.on_dirty()
+        if event.kind in {"enemy_defeated", "elite_defeated", "boss_defeated", "world_boss_defeated"}:
+            self.on_change()
+        else:
+            self.refresh()
+
     def _handle_event(self, event: CombatEvent) -> None:
         color = {
             "critical_hit": "#f0bf58",
@@ -369,7 +409,7 @@ class CombatPage(ctk.CTkFrame):
             self._handle_event(transition)
 
         player = self._bound_game_state.character
-        attributes = player.calculated_attributes
+        attributes = self.manager._player_attributes()
         enemy = self.manager.current_enemy
         if enemy is None:
             definition = self.manager.enemy_database.get_by_id(self._selected_enemy_id())
@@ -428,6 +468,28 @@ class CombatPage(ctk.CTkFrame):
             text=f"HP: {current_hp:,.1f} / {maximum_hp:,.1f} ({player_hp_ratio:.0%})"
         )
         self.player_hp_bar.set(player_hp_ratio)
+        maximum_mp = player.maximum_mp
+        current_mp = player.current_mp
+        mp_ratio = min(1.0, max(0.0, current_mp / maximum_mp)) if maximum_mp else 0.0
+        self.player_mp_label.configure(text=f"MP: {current_mp:,.1f} / {maximum_mp:,.1f} ({mp_ratio:.0%})")
+        self.player_mp_bar.set(mp_ratio)
+        equipped = self.manager.skill_manager.progress.equipped_skill_ids
+        combat_active = self.manager.state is CombatState.ACTIVE
+        for index, button in enumerate(self.skill_buttons):
+            if index >= len(equipped):
+                button.configure(text=f"Slot {index + 1}\nEmpty", state="disabled")
+                continue
+            skill = self.manager.skill_manager.database.get_optional(equipped[index])
+            if skill is None:
+                button.configure(text=f"Slot {index + 1}\nUnavailable", state="disabled")
+                continue
+            cooldown = self.manager.skill_cooldown_remaining(skill.skill_id, now=time.monotonic())
+            remaining_mp = player.can_consume_mp(skill.mp_cost)
+            if cooldown > 0:
+                button_text = f"{skill.name}\n{cooldown:.1f}s"
+            else:
+                button_text = f"{skill.name}\n{skill.mp_cost:g} MP"
+            button.configure(text=button_text, state="normal" if combat_active and cooldown <= 0 and remaining_mp else "disabled")
         self.player_attributes_label.configure(
             text=(
                 f"Attack: {attributes.attack:,.2f}\n"
@@ -435,7 +497,8 @@ class CombatPage(ctk.CTkFrame):
                 f"Critical Chance: {attributes.critical_chance:.2%}\n"
                 f"Critical Damage: {attributes.critical_damage:.2f}x\n"
                 f"Attack Speed: {attributes.attack_speed:.2f} attacks/sec\n"
-                f"HP Regeneration: {attributes.hp_regeneration:,.2f}/sec"
+                f"HP Regeneration: {attributes.hp_regeneration:,.2f}/sec\n"
+                f"MP Regeneration: {attributes.mp_regeneration:,.2f}/sec"
             )
         )
 
@@ -446,6 +509,8 @@ class CombatPage(ctk.CTkFrame):
             "total_enemies_defeated": f"{stats.total_enemies_defeated:,}",
             "total_critical_hits": f"{stats.total_critical_hits:,}",
             "total_attacks_performed": f"{stats.total_attacks_performed:,}",
+            "total_skills_used": f"{stats.total_skills_used:,}",
+            "total_skill_damage": f"{stats.total_skill_damage:,.1f}",
             "total_exp_earned": f"{stats.total_exp_earned:,}",
             "total_elites_defeated": f"{stats.total_elites_defeated:,}",
             "total_bosses_defeated": f"{stats.total_bosses_defeated:,}",
@@ -457,6 +522,8 @@ class CombatPage(ctk.CTkFrame):
             "total_enemies_defeated": "Enemies defeated",
             "total_critical_hits": "Critical hits",
             "total_attacks_performed": "Attacks performed",
+            "total_skills_used": "Skills used",
+            "total_skill_damage": "Skill damage",
             "total_exp_earned": "Combat EXP earned",
             "total_elites_defeated": "Elites defeated",
             "total_bosses_defeated": "Bosses defeated",

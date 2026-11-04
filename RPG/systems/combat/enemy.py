@@ -339,7 +339,7 @@ class Enemy:
     @property
     def attack_interval(self) -> float:
         multiplier = self.boss_phase.attack_interval_multiplier if self.boss_phase else 1.0
-        return self._finite_attribute(float(self.definition.attack_interval) * multiplier, "Attack Interval")
+        return self._finite_attribute(float(self.definition.attack_interval) * multiplier * self._effect_multiplier("attack_interval"), "Attack Interval")
 
     @property
     def description(self) -> str:
@@ -426,7 +426,7 @@ class Enemy:
     def add_effect(self, ability_id: str, name: str, attribute: str, multiplier: float, expires_at: float | None) -> None:
         if not isinstance(ability_id, str) or not ability_id.strip() or not isinstance(name, str) or not name.strip():
             raise ValueError("Enemy effects require an ability ID and display name.")
-        if attribute not in {"attack", "physical_defense", "magical_defense"}:
+        if attribute not in {"attack", "physical_defense", "magical_defense", "attack_interval"}:
             raise ValueError(f"Unsupported enemy effect attribute: {attribute}")
         if isinstance(multiplier, bool) or not isinstance(multiplier, (int, float)) or not isfinite(multiplier) or multiplier <= 0:
             raise ValueError("Enemy effect multipliers must be finite and positive.")

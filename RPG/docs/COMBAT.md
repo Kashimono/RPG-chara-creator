@@ -24,9 +24,9 @@ Final damage = max(1, raw damage × (1 - Damage reduction)) for positive raw dam
 Attack cooldown = max(0.05 seconds, 1 / Attack Speed)
 ```
 
-Player attacks use enemy Physical Defense. Enemy attacks use player Physical Defense. Piercing Strike supplies a configured effectiveness fraction to this same mitigation formula; the configuration rejects fractions below 5%. Magical Defense remains available to definitions and the UI, but no magical attack is implemented.
+Basic player attacks use enemy Physical Defense. Skills can use enemy Physical or Magical Defense through the same mitigation helper. Enemy attacks use player Physical Defense. Piercing Strike supplies a configured effectiveness fraction to this same mitigation formula; the configuration rejects fractions below 5%.
 
-Enemy attacks use the configured interval. Player HP regeneration remains capped to 0.25 seconds per UI tick so a stalled app does not award offline healing. At zero HP, combat actions and scheduling stop. Recovery restores 50% of maximum HP. Existing click attacks, critical hits, player HP, retreat, recovery, and common respawning remain in place.
+Enemy attacks use the configured interval. Player HP and MP regeneration remain capped to 0.25 seconds per UI tick so a stalled app does not award offline recovery. At zero HP, combat actions and scheduling stop. Recovery restores 50% of maximum HP. Existing click attacks, critical hits, player HP, retreat, recovery, and common respawning remain in place. Skills, status effects, MP rules, and skill formulas are detailed in [SKILLS.md](SKILLS.md).
 
 ## Enemy content and mechanics
 
@@ -47,6 +47,6 @@ Inventory capacity overflow and unknown item IDs become serialized unclaimed loo
 
 ## Save compatibility
 
-Save schema 7 keeps enemy definitions and all encounter state out of character files. It retains economy data and adds GameState-owned inventory and equipment records. Version 6 and older saves receive empty inventory and equipment defaults. Loading never resumes an enemy, ability cooldown, boss phase timer, or callback; the next session begins safely at `IDLE` unless saved player HP is zero.
+Save schema 8 keeps enemy definitions and all encounter state out of character files. It retains economy, inventory, and equipment data and adds current MP and skill progression. Version 7 and older saves receive safe MP and configured starter skill defaults. Loading never resumes an enemy, ability or skill cooldown, status effect, boss phase timer, or callback; the next session begins safely at `IDLE` unless saved player HP is zero.
 
 The generic `SaveManager` continues serializing `GameState.to_dict()` and requires no enemy-specific serialization path.

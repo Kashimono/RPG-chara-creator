@@ -112,6 +112,35 @@ class EconomyManager:
     ) -> CurrencyTransaction:
         return self._spend(amount, currency_type, transaction_type, source, description, reference_id)
 
+    def spend_currency_with_operation(
+        self,
+        amount: int,
+        *,
+        currency_type: str = "gold",
+        transaction_type: TransactionType | str,
+        source: str,
+        description: str,
+        apply_operation: Callable[[], bool],
+        reference_id: str | None = None,
+    ) -> CurrencyTransaction | None:
+        """Apply a validated progression change before recording its debit."""
+        currency = normalize_currency(currency_type)
+        value = validate_currency_amount(amount)
+        account = self.game_state.economy.accounts[currency]
+        if account.balance < value:
+            raise EconomyTransactionError(f"Insufficient {currency.title()}.")
+        if account.total_spent + value > MAX_CURRENCY_VALUE:
+            raise EconomyTransactionError("Lifetime spending would exceed the supported safe integer range.")
+        tx = self._make_transaction(transaction_type, currency, value, TransactionDirection.SPENT, source, description, reference_id)
+        self._ensure_unique((tx,))
+        if not apply_operation():
+            return None
+        self.game_state.economy.accounts[currency] = CurrencyAccount(
+            account.balance - value, account.total_earned, account.total_spent + value,
+        )
+        self.game_state.economy.append_transactions([tx], history_limit=self.config.transaction_history_limit)
+        return tx
+
     def purchase_gold(
         self,
         amount: int,

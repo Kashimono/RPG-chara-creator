@@ -15,15 +15,16 @@ A dark fantasy clicker RPG made with Python and CustomTkinter. The application h
 - Earn configurable guaranteed Gold rewards and optional Gold loot drops through the existing defeat and loot-table flow. Spend Gold on five potential-aware training options, with transaction history saved in GameState.
 - Collect enemy materials, trophies, miscellaneous items, and equipment in a 50-slot inventory. Stack or split materials, inspect and filter items, and claim drops that could not fit in the bag.
 - Equip weapons, armor, and accessories across nine configured slots. Rarity scales configured bonuses and sale value; gear bonuses flow through the shared character calculator and combat.
+- Unlock and upgrade 17 data-defined physical, magical, defensive, and support skills; equip up to six skills, spend MP, and use cooldowns, buffs, healing, damage-over-time, stun, slow, weakening, and defense-break effects.
 - Sell eligible inventory items through recorded EconomyManager transactions. Equipped gear cannot be sold; equipment swaps and item sales validate before committing.
 - Browse enemies by classification, start optional Elite encounters, and explicitly confirm Boss and World Boss challenges. The Common rotation retains the original five enemies and timed respawns.
-- Save and load characters with version 7 JSON. Version 6 and older saves preserve character, combat, and economy data and receive empty inventory/equipment state during migration.
-- Use Dashboard, Character, Combat, Economy, Inventory, and Settings navigation. Character and Inventory show equipped items and effective gear bonuses.
+- Save and load characters with version 8 JSON. Version 7 and older saves preserve existing character, combat, economy, inventory, and equipment data, initialize MP safely, and receive configured starter skills.
+- Use Dashboard, Character, Combat, Skills, Economy, Inventory, and Settings navigation. Character and Inventory show equipped items and effective gear bonuses.
 - Copy the existing character profile to the clipboard and choose an appearance preference.
 
-Progression rules are documented in [`RPG/docs/PROGRESSION.md`](RPG/docs/PROGRESSION.md). Combat formulas and encounter behavior are documented in [`RPG/docs/COMBAT.md`](RPG/docs/COMBAT.md), economy design and tuning in [`RPG/docs/ECONOMY.md`](RPG/docs/ECONOMY.md), with enemy data, scaling, abilities, phases, and loot in [`RPG/docs/ENEMIES.md`](RPG/docs/ENEMIES.md).
+Progression rules are documented in [`RPG/docs/PROGRESSION.md`](RPG/docs/PROGRESSION.md). Combat formulas and encounter behavior are documented in [`RPG/docs/COMBAT.md`](RPG/docs/COMBAT.md), skill definitions and effects in [`RPG/docs/SKILLS.md`](RPG/docs/SKILLS.md), economy design and tuning in [`RPG/docs/ECONOMY.md`](RPG/docs/ECONOMY.md), with enemy data, scaling, abilities, phases, and loot in [`RPG/docs/ENEMIES.md`](RPG/docs/ENEMIES.md).
 
-Player skills, equipment enhancement, crafting, idle or offline combat, world maps, dungeons, summoning, and ascension remain future features.
+Equipment enhancement, crafting, idle or offline combat, world maps, dungeons, summoning, and ascension remain future features. Full skill trees, specialization, and skill evolution are not implemented.
 
 ## Project structure
 
@@ -32,7 +33,8 @@ RPG/
   core/                 Character, race, stats, EXP, passives, and calculations
   data/                 Enemy roster, enemy abilities, loot tables, and economy tuning
   managers/             Save and settings services
-  systems/combat/       Enemy database, abilities, boss phases, loot, damage, and encounters
+  systems/combat/       Enemy database, abilities, boss phases, loot, damage, effects, and encounters
+  systems/skills/       Skill database, calculations, progression, and loadouts
   systems/economy/      Currency state, transactions, reward calculation, and training shop
   systems/inventory/    Item data, bag capacity and stacking, loot collection, and sales
   systems/equipment/    Equipment slots, validation, persistence, and bonus calculation
@@ -41,7 +43,7 @@ RPG/
     main_window.py      Application shell and shared actions
     navigation.py       Persistent sidebar
     components/         Reusable progression panels
-    pages/              Dashboard, Character, Combat, Economy, Inventory, Settings
+    pages/              Dashboard, Character, Combat, Skills, Economy, Inventory, Settings
     *_panel.py          Race, potential, level, allocation, and advanced stats
   saves/                JSON character saves
   docs/                 Architecture, progression, combat, economy, and inventory documentation

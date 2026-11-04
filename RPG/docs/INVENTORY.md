@@ -80,7 +80,7 @@ Sales are checked against wallet limits and recorded as earned `item_sale` Econo
 
 ## Save compatibility
 
-Schema 7 serializes inventory and equipment inside the shared `GameState` JSON envelope. Item definitions remain static files; only player-owned instances and state are saved. Version 6 and earlier saves load with empty inventory and equipment state while retaining their character, combat, and economy data. Loading performs migration in memory; saving writes schema 7.
+Schema 8 serializes inventory, equipment, current MP, and skill progression inside the shared `GameState` JSON envelope. Item and skill definitions remain static files; only player-owned instances and progression are saved. Version 7 and earlier saves retain their character, combat, economy, inventory, and equipment data and receive safe MP and configured starter skill defaults. Loading performs migration in memory; saving writes schema 8.
 
 Implemented now: item data validation, stackable bag storage, filtering/sorting, item inspection, gear comparison, nine equipment slots, rarity-scaled bonuses and value, loot collection with claimable overflow, item sales, and save/load support.
 

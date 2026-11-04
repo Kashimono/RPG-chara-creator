@@ -1,0 +1,8 @@
+{
+  "skills": [
+    {"id":"arcane_bolt","name":"Arcane Bolt","description":"A quick bolt of arcane force.","classification":"magical","type":"damage","mp_cost":7,"cooldown":2.5,"required_level":1,"unlock_gold":0,"upgrade_gold":35,"max_level":5,"critical_eligible":true,"effects":[{"kind":"damage","damage_type":"magical","magnitude":0,"scaling":{"mp":1.25}}]},
+    {"id":"fireball","name":"Fireball","description":"Blast the target and leave a burning wound.","classification":"magical","type":"hybrid","mp_cost":18,"cooldown":6,"required_level":4,"unlock_gold":130,"upgrade_gold":70,"max_level":5,"critical_eligible":true,"effects":[{"kind":"damage","damage_type":"magical","magnitude":0,"scaling":{"mp":1.7}},{"kind":"status","status":"burn","magnitude":0.1,"duration":5,"tick_interval":1}]},
+    {"id":"lightning_strike","name":"Lightning Strike","description":"A sharp magical strike with strong burst damage.","classification":"magical","type":"damage","mp_cost":22,"cooldown":8,"required_level":9,"unlock_gold":320,"upgrade_gold":110,"max_level":5,"critical_eligible":true,"effects":[{"kind":"damage","damage_type":"magical","magnitude":0,"scaling":{"mp":2.2}}]},
+    {"id":"frost_nova","name":"Frost Nova","description":"Deal magical damage and slow the enemy's attacks.","classification":"magical","type":"hybrid","mp_cost":16,"cooldown":9,"required_level":7,"unlock_gold":250,"upgrade_gold":95,"max_level":5,"critical_eligible":true,"effects":[{"kind":"damage","damage_type":"magical","magnitude":0,"scaling":{"mp":0.9}},{"kind":"status","status":"slow","magnitude":1.45,"duration":4}]}
+  ]
+}

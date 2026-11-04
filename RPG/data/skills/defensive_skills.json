@@ -1,0 +1,8 @@
+{
+  "skills": [
+    {"id":"iron_guard","name":"Iron Guard","description":"Raise physical defense for a short time.","classification":"defensive","type":"buff","mp_cost":12,"cooldown":12,"required_level":2,"unlock_gold":80,"upgrade_gold":45,"max_level":5,"effects":[{"kind":"buff","target":"self","duration":6,"modifiers":{"physical_defense_multiplier":1.5}}]},
+    {"id":"shield_wall","name":"Shield Wall","description":"Improve both defenses while the wall holds.","classification":"defensive","type":"buff","mp_cost":20,"cooldown":18,"required_level":7,"unlock_gold":240,"upgrade_gold":90,"max_level":5,"effects":[{"kind":"buff","target":"self","duration":7,"modifiers":{"physical_defense_multiplier":1.35,"magical_defense_multiplier":1.35}}]},
+    {"id":"counter_stance","name":"Counter Stance","description":"Brace yourself and weaken the next enemy attack.","classification":"defensive","type":"hybrid","mp_cost":14,"cooldown":14,"required_level":5,"unlock_gold":170,"upgrade_gold":70,"max_level":5,"effects":[{"kind":"buff","target":"self","duration":5,"modifiers":{"physical_defense_multiplier":1.25,"magical_defense_multiplier":1.15}},{"kind":"status","status":"weaken","magnitude":0.8,"duration":5}]},
+    {"id":"shield_bash","name":"Shield Bash","description":"A defensive strike that can interrupt the enemy.","classification":"defensive","type":"hybrid","mp_cost":10,"cooldown":10,"required_level":4,"unlock_gold":140,"upgrade_gold":65,"max_level":5,"critical_eligible":true,"effects":[{"kind":"damage","damage_type":"physical","magnitude":0,"scaling":{"attack":0.7}},{"kind":"status","status":"stun","magnitude":1,"duration":1.5}]}
+  ]
+}

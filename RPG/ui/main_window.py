@@ -20,6 +20,7 @@ from .pages.dashboard import DashboardPage
 from .pages.economy import EconomyPage
 from .pages.inventory import InventoryPage
 from .pages.settings import SettingsPage
+from .pages.skills import SkillsPage
 from .save_dialog import LoadSaveDialog
 from .themes import apply_theme
 
@@ -74,6 +75,7 @@ class MainWindow(ctk.CTk):
                 self.handle_game_change,
                 self.mark_game_dirty,
             ),
+            "skills": SkillsPage(self.page_container, lambda: self.game_state, self.handle_game_change),
             "economy": EconomyPage(
                 self.page_container,
                 lambda: self.game_state,
@@ -102,6 +104,9 @@ class MainWindow(ctk.CTk):
         inventory_page = self.pages.get("inventory")
         if inventory_page is not None:
             inventory_page.bind_game_state()
+        skills_page = self.pages.get("skills")
+        if skills_page is not None:
+            skills_page._bind_state()
         combat_page = self.pages.get("combat")
         if combat_page is not None:
             combat_page._bind_game_state()

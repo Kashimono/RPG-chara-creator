@@ -13,6 +13,7 @@ from uuid import uuid4
 from . import combat_config
 from .boss_manager import BossManager
 from .damage_calculator import RandomSource, calculate_enemy_damage, calculate_player_damage
+from .status_effect_manager import StatusEffectManager
 from .enemy import Enemy, EnemyClassification, EnemyDefinition
 from .enemy_ability import AbilityEvent, EnemyAbilityRuntime, EnemyAttackProfile
 from .enemy_database import EnemyDatabase, EnemyDatabaseError
@@ -20,6 +21,8 @@ from .loot_table import LootDrop, LootRandomSource, LootTableDatabase
 from ..economy.reward_manager import RewardManager, RewardSummary
 from ..inventory.inventory_manager import InventoryManager, ItemCollectionResult
 from ..equipment.equipment_manager import EquipmentManager
+from ..skills.skill_calculator import calculate_skill_damage, effect_magnitude
+from ..skills.skill_manager import SkillActionError, SkillManager
 
 if TYPE_CHECKING:
     from ...core.game_state import GameState
@@ -49,6 +52,8 @@ class CombatEvent:
     notifications: tuple[str, ...] = ()
     reward_summary: RewardSummary | None = None
     item_collections: tuple[ItemCollectionResult, ...] = ()
+    skill_id: str | None = None
+    mp_consumed: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -76,6 +81,8 @@ class CombatManager:
         self.game_state = game_state
         self.inventory_manager = InventoryManager(game_state)
         self.equipment_manager = EquipmentManager(game_state, self.inventory_manager.item_database, self.inventory_manager)
+        self.skill_manager = SkillManager(game_state)
+        self.status_effect_manager = StatusEffectManager()
         self.rng = rng if rng is not None else random.Random()
         self.loot_rng = loot_rng if loot_rng is not None else (self.rng if hasattr(self.rng, "randint") else random.Random())
         if enemy_database is not None and enemy_definitions is not None:
@@ -200,7 +207,7 @@ class CombatManager:
             return CombatEvent("cooldown", f"Attack is recharging ({remaining:.2f}s).")
 
         player = self.game_state.character
-        result = calculate_player_damage(player.calculated_attributes, enemy, self.rng)
+        result = calculate_player_damage(self._player_attributes(), enemy, self.rng)
         applied = enemy.receive_damage(result.damage)
         self.game_state.record_player_attack(applied, result.critical)
         self._next_player_attack_at = now + self.attack_cooldown_seconds()
@@ -226,6 +233,124 @@ class CombatManager:
             kind = "player_hit"
             message = f"You dealt {applied:,.1f} damage to {enemy.name}."
         return CombatEvent(kind, message, damage=applied, critical=result.critical, notifications=tuple(notifications))
+
+    def activate_skill(self, skill_id: str, *, now: float | None = None) -> CombatEvent:
+        """Validate, pay for, and apply one equipped skill exactly once."""
+        current = self._time(now)
+        self.synchronize_player()
+        if self.state is not CombatState.ACTIVE or self.current_enemy is None or self.current_enemy.is_defeated:
+            raise CombatActionError("Skills can only be used against a living enemy during combat.")
+        if self.game_state.character.current_hp <= 0:
+            self._enter_player_defeated()
+            raise CombatActionError("A defeated player cannot use skills. Recover first.")
+        try:
+            skill = self.skill_manager.validate_activation(skill_id, now=current)
+        except SkillActionError as exc:
+            raise CombatActionError(str(exc)) from exc
+        enemy = self.current_enemy
+        player = self.game_state.character
+        attributes = self._player_attributes()
+        old_enemy_interval = enemy.attack_interval
+        level = self.skill_manager.level(skill.skill_id)
+
+        # Resolve all calculations before consuming MP so bad content cannot
+        # leave a half-paid activation.
+        prepared: list[tuple[str, object, float, bool]] = []
+        for effect in skill.effects:
+            if effect.kind == "damage":
+                for _ in range(effect.hits):
+                    hit = calculate_skill_damage(attributes, enemy, effect, level,
+                                                 critical_eligible=skill.critical_eligible, rng=self.rng)
+                    prepared.append(("damage", hit, hit.damage, hit.critical))
+            elif effect.kind in {"healing", "resource_restore"}:
+                prepared.append((effect.kind, effect, effect_magnitude(attributes, effect, level), False))
+            else:
+                prepared.append((effect.kind, effect, effect_magnitude(attributes, effect, level), False))
+        if not player.consume_mp(skill.mp_cost):
+            raise CombatActionError(f"Not enough MP for {skill.name}.")
+
+        damage = 0.0
+        healed = 0.0
+        restored_mp = 0.0
+        critical_hits = 0
+        for kind, source, magnitude, was_critical in prepared:
+            if kind == "damage":
+                if enemy.is_defeated:
+                    break
+                applied = enemy.receive_damage(magnitude)
+                damage += applied
+                critical_hits += 1 if was_critical else 0
+            elif kind == "healing":
+                healed += player.heal(magnitude)
+            elif kind == "resource_restore":
+                restored_mp += player.restore_mp(magnitude)
+            elif kind == "buff":
+                effect = source
+                self.status_effect_manager.apply(
+                    target="player", status="buff", source_id=skill.skill_id, magnitude=1,
+                    duration=effect.duration, now=current, modifiers=effect.modifiers,
+                )
+            elif kind in {"debuff", "status"}:
+                effect = source
+                status = effect.status or ""
+                duration_scale = StatusEffectManager.BOSS_DURATION.get(enemy.classification, 1.0)
+                duration = effect.duration * duration_scale
+                if status in {"weaken", "defense_break", "slow"}:
+                    attribute = {"weaken": "attack", "defense_break": "physical_defense", "slow": "attack_interval"}[status]
+                    multiplier = max(0.1, magnitude)
+                    enemy.add_effect(f"skill:{skill.skill_id}:{status}", status.replace("_", " ").title(), attribute,
+                                     multiplier, current + duration)
+                    if status == "defense_break":
+                        enemy.add_effect(f"skill:{skill.skill_id}:{status}:magic", "Defense Break", "magical_defense", multiplier, current + duration)
+                    if status == "slow" and self._next_enemy_attack_at is not None:
+                        self._next_enemy_attack_at = max(self._next_enemy_attack_at, current + enemy.attack_interval)
+                self.status_effect_manager.apply(
+                    target="player" if effect.target == "self" else "enemy", status=status,
+                    source_id=skill.skill_id, magnitude=magnitude, duration=effect.duration,
+                    now=current, tick_interval=effect.tick_interval, classification=enemy.classification,
+                )
+
+        self.skill_manager.start_cooldown(skill, current)
+        critical = critical_hits > 0
+        notifications: list[str] = []
+        if not enemy.is_defeated:
+            for transition in self._boss_manager.advance_phases(enemy):
+                text = f"{enemy.name} enters {transition.current_phase}."
+                if transition.description:
+                    text += f" {transition.description}"
+                notifications.append(text)
+            if enemy.attack_interval != old_enemy_interval and self.state is CombatState.ACTIVE:
+                self._next_enemy_attack_at = current + enemy.attack_interval
+            if self._ability_runtime is not None:
+                notifications.extend(event.message for event in self._ability_runtime.update(current))
+        stats = self.game_state.combat_statistics
+        stats.total_damage_dealt += damage
+        stats.record_skill_use(skill.skill_id, damage=damage, healing=healed,
+                               mp_consumed=skill.mp_cost, mp_restored=restored_mp, critical_hits=critical_hits)
+        if enemy.is_defeated:
+            defeated = self._resolve_defeat(enemy, damage, critical, current, tuple(notifications))
+            return CombatEvent(defeated.kind, f"{skill.name}: {defeated.message}", damage=damage, critical=critical,
+                               exp_reward=defeated.exp_reward, levels_gained=defeated.levels_gained,
+                               drops=defeated.drops, notifications=defeated.notifications,
+                               reward_summary=defeated.reward_summary, item_collections=defeated.item_collections,
+                               skill_id=skill.skill_id, mp_consumed=skill.mp_cost)
+        summary = f"{skill.name} activated."
+        if damage:
+            summary += f" Dealt {damage:,.1f} damage."
+        if healed:
+            summary += f" Restored {healed:,.1f} HP."
+        if restored_mp:
+            summary += f" Restored {restored_mp:,.1f} MP."
+        if critical:
+            summary = "Critical skill hit! " + summary
+        return CombatEvent("skill_activated", summary, damage=damage, critical=critical, notifications=tuple(notifications),
+                           skill_id=skill.skill_id, mp_consumed=skill.mp_cost)
+
+    def skill_cooldown_remaining(self, skill_id: str, *, now: float | None = None) -> float:
+        return self.skill_manager.cooldown_remaining(skill_id, now=self._time(now))
+
+    def _player_attributes(self):
+        return self.status_effect_manager.player_attributes(self.game_state.character.calculated_attributes)
 
     def retreat(self) -> CombatEvent:
         if self.state not in {CombatState.ACTIVE, CombatState.ENEMY_DEFEATED}:
@@ -326,19 +451,63 @@ class CombatManager:
             max(0.0, now - self._last_regeneration_at),
         )
         self._last_regeneration_at = now
-        regeneration = player.calculated_attributes.hp_regeneration * elapsed
+        attributes = self._player_attributes()
+        regeneration = attributes.hp_regeneration * elapsed
+        mp_regeneration = attributes.mp_regeneration * elapsed
         if regeneration > 0:
             healed = self.game_state.heal_combat_hp(regeneration)
             changed = changed or healed > 0
+        if mp_regeneration > 0:
+            restored = player.restore_mp(mp_regeneration)
+            changed = changed or restored > 0
+
+        status_ticks = self.status_effect_manager.update(now, player, enemy)
+        for status_tick in status_ticks:
+            if status_tick.target == "enemy":
+                stats = self.game_state.combat_statistics
+                stats.total_damage_dealt += status_tick.amount
+                stats.total_skill_damage += status_tick.amount
+                stats.skill_damage[status_tick.source_id] = stats.skill_damage.get(status_tick.source_id, 0.0) + status_tick.amount
+                events.append(CombatEvent("status_tick", f"{status_tick.status.title()} dealt {status_tick.amount:,.1f} damage.", damage=status_tick.amount))
+            else:
+                if status_tick.status != "regeneration":
+                    self.game_state.record_damage_received(status_tick.amount)
+                    events.append(CombatEvent("status_tick", f"{status_tick.status.title()} dealt {status_tick.amount:,.1f} damage to you.", damage=status_tick.amount))
+                else:
+                    events.append(CombatEvent("status_tick", f"{status_tick.status.title()} restored {status_tick.amount:,.1f} HP.", damage=status_tick.amount))
+            changed = changed or status_tick.amount > 0
+        if enemy.is_defeated:
+            total_dot_damage = sum(item.amount for item in status_ticks if item.target == "enemy")
+            events.append(self._resolve_defeat(enemy, total_dot_damage, False, now, ()))
+            return CombatTickResult(changed=True, events=tuple(events))
+        if status_ticks:
+            old_interval = enemy.attack_interval
+            for transition in self._boss_manager.advance_phases(enemy):
+                text = f"{enemy.name} enters {transition.current_phase}."
+                if transition.description:
+                    text += f" {transition.description}"
+                events.append(CombatEvent("boss_phase", text))
+            if enemy.attack_interval != old_interval:
+                self._next_enemy_attack_at = now + enemy.attack_interval
+            if self._ability_runtime is not None:
+                events.extend(self._ability_combat_events(self._ability_runtime.update(now)))
+        if player.current_hp <= 0:
+            self._enter_player_defeated()
+            events.append(CombatEvent("player_defeated", "You have been defeated by a lingering effect."))
+            return CombatTickResult(changed=True, events=tuple(events))
 
         if self._next_enemy_attack_at is not None and now >= self._next_enemy_attack_at:
+            if self.status_effect_manager.enemy_stunned():
+                events.append(CombatEvent("enemy_stunned", f"{enemy.name} is stunned and cannot act."))
+                self._next_enemy_attack_at = now + enemy.attack_interval
+                return CombatTickResult(changed=True, events=tuple(events))
             profile = None
             if self._ability_runtime is not None:
                 profile, ability_events = self._ability_runtime.before_enemy_attack(now)
                 events.extend(self._ability_combat_events(ability_events))
             if profile is None:
                 profile = EnemyAttackProfile()
-            defense = player.calculated_attributes.physical_defense * profile.defense_effectiveness
+            defense = self._player_attributes().physical_defense * profile.defense_effectiveness
             result = calculate_enemy_damage(enemy.attack * profile.damage_multiplier, defense, self.rng)
             received = self.game_state.take_combat_damage(result.damage)
             self.game_state.record_damage_received(received)
@@ -378,6 +547,7 @@ class CombatManager:
         self._encounter_id = uuid4().hex
         self._ability_runtime = EnemyAbilityRuntime(enemy)
         self._encounter_mode = mode
+        self.status_effect_manager.clear()
         if definition.classification is EnemyClassification.COMMON:
             current_index = next(
                 index for index, common in enumerate(self._common_definitions)
@@ -514,6 +684,7 @@ class CombatManager:
         if self._ability_runtime is not None:
             self._ability_runtime.clear()
             self._ability_runtime = None
+        self.status_effect_manager.clear()
 
     def _clear_timers(self) -> None:
         self._next_enemy_attack_at = None

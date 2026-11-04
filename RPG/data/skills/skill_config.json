@@ -1,0 +1,4 @@
+{
+  "max_equipped_skills": 6,
+  "starting_skills": ["power_strike", "arcane_bolt"]
+}

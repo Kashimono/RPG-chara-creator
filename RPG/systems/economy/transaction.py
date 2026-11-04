@@ -16,6 +16,8 @@ class TransactionType(str, Enum):
     WORLD_BOSS_REWARD = "world_boss_reward"
     LOOT_CURRENCY_DROP = "loot_currency_drop"
     TRAINING_PURCHASE = "training_purchase"
+    SKILL_UNLOCK = "skill_unlock"
+    SKILL_UPGRADE = "skill_upgrade"
     ITEM_SALE = "item_sale"
     ADMIN_ADJUSTMENT = "admin_adjustment"
 

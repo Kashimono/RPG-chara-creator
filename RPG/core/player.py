@@ -24,6 +24,7 @@ class Player:
         self.exp = LevelSystem.starting_exp()
         self.exp_to_next = LevelSystem.next_level_exp(self.level)
         self._current_hp: float | None = None
+        self._current_mp: float | None = None
         self._equipment_bonuses: dict[str, float] = {}
         self.stat_points = 0
         self.character_created = False
@@ -47,6 +48,7 @@ class Player:
         self.exp = LevelSystem.starting_exp()
         self.exp_to_next = LevelSystem.next_level_exp(self.level)
         self._current_hp = None
+        self._current_mp = None
         self._equipment_bonuses = {}
         self.stat_points = 0
         self.character_created = False
@@ -223,10 +225,13 @@ class Player:
         if normalized == self._equipment_bonuses:
             return
         previous_hp = self.current_hp
+        previous_mp = self._current_mp
         previous_maximum = self.maximum_hp
         self._equipment_bonuses = normalized
         if self._current_hp is not None or self.maximum_hp != previous_maximum:
             self.set_current_hp(previous_hp)
+        if previous_mp is not None:
+            self.set_current_mp(previous_mp)
 
     @property
     def maximum_hp(self) -> float:
@@ -265,6 +270,48 @@ class Player:
         before = self.current_hp
         self.set_current_hp(before + float(amount))
         return self.current_hp - before
+
+    @property
+    def maximum_mp(self) -> float:
+        """Return effective maximum MP, including race, class, and equipment."""
+        return max(0.0, self.calculated_attributes.mp)
+
+    @property
+    def current_mp(self) -> float:
+        """Return current MP, defaulting new and legacy characters to full."""
+        maximum = self.maximum_mp
+        if self._current_mp is None:
+            return maximum
+        self._current_mp = min(maximum, max(0.0, self._current_mp))
+        return self._current_mp
+
+    @property
+    def has_saved_current_mp(self) -> bool:
+        return self._current_mp is not None
+
+    def set_current_mp(self, value: float) -> float:
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or not isfinite(value):
+            raise ValueError("Current MP must be a finite number.")
+        self._current_mp = min(self.maximum_mp, max(0.0, float(value)))
+        return self._current_mp
+
+    def can_consume_mp(self, amount: float) -> bool:
+        if isinstance(amount, bool) or not isinstance(amount, (int, float)) or not isfinite(amount) or amount < 0:
+            return False
+        return self.current_mp + 1e-9 >= float(amount)
+
+    def consume_mp(self, amount: float) -> bool:
+        if not self.can_consume_mp(amount):
+            return False
+        self.set_current_mp(self.current_mp - float(amount))
+        return True
+
+    def restore_mp(self, amount: float) -> float:
+        if isinstance(amount, bool) or not isinstance(amount, (int, float)) or not isfinite(amount) or amount < 0:
+            raise ValueError("MP restoration must be a finite non-negative number.")
+        before = self.current_mp
+        self.set_current_mp(before + float(amount))
+        return self.current_mp - before
 
     def can_allocate(self, stat_name: str, amount: int = 1, *, consume_stat_points: bool = True) -> bool:
         if (
@@ -310,6 +357,7 @@ class Player:
             "level": self.level,
             "exp": self.exp,
             "current_hp": self._current_hp,
+            "current_mp": self._current_mp,
             "stat_points": self.stat_points,
             "character_created": self.character_created,
             "class_id": self.class_id,
@@ -331,6 +379,7 @@ class Player:
         self.level = data.get("level", self.level)
         self.exp = data.get("exp", self.exp)
         raw_current_hp = data.get("current_hp")
+        raw_current_mp = data.get("current_mp")
         # Old saves stored a fixed EXP threshold. Recalculate it from level.
         self.exp_to_next = LevelSystem.required_exp(self.level)
         self.stat_points = data.get("stat_points", self.stat_points)
@@ -380,6 +429,12 @@ class Player:
             raise ValueError("Saved current HP must be a finite number.")
         else:
             self._current_hp = min(self.maximum_hp, max(0.0, float(raw_current_hp)))
+        if raw_current_mp is None:
+            self._current_mp = None
+        elif isinstance(raw_current_mp, bool) or not isinstance(raw_current_mp, (int, float)) or not isfinite(raw_current_mp):
+            raise ValueError("Saved current MP must be a finite number.")
+        else:
+            self._current_mp = min(self.maximum_mp, max(0.0, float(raw_current_mp)))
         self._unlock_titles_for_level()
         if self.equipped_title not in self.unlocked_titles:
             self.equipped_title = "novice"

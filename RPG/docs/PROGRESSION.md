@@ -80,6 +80,6 @@ Unlocks are granted automatically whenever progression changes the level. Only a
 
 ## Save migration
 
-Save schema version 7 retains the character, combat, and economy fields and adds GameState-owned inventory and equipment records. Version 6 and earlier, including raw saves, continue to load with empty inventory and equipment defaults without resetting progression. Derived attributes and the current level's EXP requirement are not serialized; they are recalculated from the saved level, stats, race, class, and equipped items.
+Save schema version 8 retains the character, combat, economy, inventory, and equipment fields and adds current MP, skill progression, and skill combat aggregates. Version 7 and earlier, including raw saves, continue to load with full current MP and configured starter skills without resetting existing progression. Derived attributes and the current level's EXP requirement are not serialized; they are recalculated from the saved level, stats, race, class, and equipped items.
 
 Version 3 and version 2 saves use the existing `character` envelope; version 1 saves use `player`; raw Player JSON is also accepted. Older saves default to full current HP, zero combat statistics, no class, the starting Novice title, and the race's default profile. Their old stored EXP threshold is ignored and recalculated. Loading performs this migration in memory; the source file changes only when the user explicitly saves and confirms overwriting it.

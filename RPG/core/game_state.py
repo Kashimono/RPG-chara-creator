@@ -11,6 +11,7 @@ from ..systems.combat.combat_stats import CombatStatistics
 from ..systems.economy.currency import EconomyState
 from ..systems.inventory.inventory import InventoryState
 from ..systems.equipment.equipment import EquipmentState
+from ..systems.skills.skill import SkillProgressState
 
 
 class GameState:
@@ -33,6 +34,7 @@ class GameState:
         economy: EconomyState | Mapping[str, Any] | None = None,
         inventory: InventoryState | Mapping[str, Any] | None = None,
         equipment: EquipmentState | Mapping[str, Any] | None = None,
+        skill_state: SkillProgressState | Mapping[str, Any] | None = None,
     ) -> None:
         self.player = player if player is not None else Player()
         self.game_settings = normalize_game_settings(dict(game_settings or {}))
@@ -47,6 +49,7 @@ class GameState:
         self.economy = economy if isinstance(economy, EconomyState) else EconomyState.from_dict(economy or {})
         self.inventory = inventory if isinstance(inventory, InventoryState) else InventoryState.from_dict(inventory or {})
         self.equipment = equipment if isinstance(equipment, EquipmentState) else EquipmentState.from_dict(equipment or {})
+        self.skill_state = skill_state if isinstance(skill_state, SkillProgressState) else SkillProgressState.from_dict(skill_state)
 
     @property
     def character(self) -> Player:
@@ -69,6 +72,7 @@ class GameState:
             "economy": self.economy.to_dict(),
             "inventory": self.inventory.to_dict(),
             "equipment": self.equipment.to_dict(),
+            "skill_state": self.skill_state.to_dict(),
             "game_settings": dict(self.game_settings),
             "metadata": {
                 "save_id": self.save_id,
@@ -119,6 +123,7 @@ class GameState:
             economy=data.get("economy", {}),
             inventory=data.get("inventory", {}),
             equipment=data.get("equipment", {}),
+            skill_state=data.get("skill_state"),
         )
         state.loaded_from_legacy = version < cls.SAVE_VERSION or "character" not in data
         return state
@@ -136,6 +141,7 @@ class GameState:
         self.economy = loaded.economy
         self.inventory = loaded.inventory
         self.equipment = loaded.equipment
+        self.skill_state = loaded.skill_state
 
     def take_combat_damage(self, amount: float) -> float:
         return self.character.take_damage(amount)

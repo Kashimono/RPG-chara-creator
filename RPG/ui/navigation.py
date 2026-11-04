@@ -14,6 +14,7 @@ class NavigationSidebar(ctk.CTkFrame):
         ("dashboard", "Dashboard"),
         ("character", "Character"),
         ("combat", "Combat"),
+        ("skills", "Skills"),
         ("economy", "Economy"),
         ("inventory", "Inventory"),
         ("settings", "Settings"),

@@ -34,7 +34,7 @@ Enemy instances already provide a one-time `claim_reward()` guard, and bosses us
 
 Gold is stored as a non-negative safe integer. A successful credit updates current balance and lifetime earned; a debit updates current balance and lifetime spent. An operation that exceeds the safe range, uses an unsupported currency, has an invalid amount, or lacks funds fails before changing wallet state. Training applies its stat change before the debit commits, so rejected purchases do not alter either side.
 
-Each successful operation records a unique transaction ID, transaction type, currency, positive amount, earned/spent direction, source, description, UTC timestamp, and optional reference ID. Rows remain in timestamp order; equal timestamps preserve operation order. The configurable history cap defaults to 100 records. Lifetime totals and purchase counts remain stored even when older history rows are pruned.
+Each successful operation records a unique transaction ID, transaction type, currency, positive amount, earned/spent direction, source, description, UTC timestamp, and optional reference ID. Rows remain in timestamp order; equal timestamps preserve operation order. The configurable history cap defaults to 100 records. Lifetime totals and purchase counts remain stored even when older history rows are pruned. Skill unlocks and upgrades use the same wallet and record `skill_unlock` and `skill_upgrade` transactions; failed progression operations do not debit Gold.
 
 ## Training shop
 
@@ -46,6 +46,6 @@ Eligible inventory items can be sold through `InventoryManager`. Each sale is re
 
 ## Persistence and tuning
 
-Save schema 7 stores economy, inventory, and equipment in the `GameState` envelope. Earlier save versions preserve their existing economy migration behavior and get empty inventory/equipment defaults. Loading does not rewrite a save; the normal explicit save operation writes schema 7.
+Save schema 8 stores economy, inventory, equipment, and skill progression in the `GameState` envelope. Earlier save versions preserve their existing economy migration behavior, receive empty inventory/equipment defaults, and receive configured starter skill defaults. Loading does not rewrite a save; the normal explicit save operation writes schema 8.
 
 Edit enemy rewards, multipliers, history size, or training options in `RPG/data/economy.json`. Edit currency and item drop rates and quantities in `RPG/data/loot_tables.json`. New enemy definitions need their own economy reward entry before they produce a guaranteed Gold payout. Currency support currently includes Gold only. Inventory and equipment are documented in `INVENTORY.md`.
